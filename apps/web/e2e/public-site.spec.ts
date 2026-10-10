@@ -26,6 +26,21 @@ test.describe('Public site', () => {
     await expect(page).toHaveURL(/\/contacto#cotizar/);
   });
 
+  test('floating WhatsApp button opens the business chat (public pages only)', async ({ page }) => {
+    for (const route of ['/', '/proyectos', '/contacto']) {
+      await page.goto(route);
+      const fab = page.locator('a.whatsapp-fab');
+      await expect(fab).toBeVisible();
+      await expect(fab).toHaveAccessibleName(/WhatsApp/);
+      const href = await fab.getAttribute('href');
+      expect(href).toMatch(/^https:\/\/wa\.me\/593979584079\?text=/);
+      await expect(fab).toHaveAttribute('target', '_blank');
+      await expect(fab).toHaveAttribute('rel', /noopener/);
+    }
+    await page.goto('/admin/login');
+    await expect(page.locator('a.whatsapp-fab')).toHaveCount(0);
+  });
+
   test('quote form persists a request and shows a success message', async ({ page, request }) => {
     const email = `cliente-${Date.now()}@example.com`;
     await page.goto('/contacto');

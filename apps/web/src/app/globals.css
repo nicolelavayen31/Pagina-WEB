@@ -639,6 +639,59 @@ img {
   font-size: 0.95rem;
 }
 
+/* ===================================================== services catalogue */
+
+.service-catalogue {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.service-tile {
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--color-surface-alt);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.service-tile:hover {
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-2px);
+}
+
+/* Services without a confirmed photo keep the striped navy panel. */
+.service-tile__media {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  background: var(--color-navy) var(--stripes);
+}
+
+.service-tile__media img {
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.service-tile:hover .service-tile__media img {
+  transform: scale(1.04);
+}
+
+.service-tile__body {
+  padding: 20px 22px 24px;
+}
+
+.service-tile h2 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+}
+
+.service-tile p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
 /* ======================================================== project cards */
 
 .project-grid {

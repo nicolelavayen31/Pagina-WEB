@@ -45,6 +45,8 @@ async function main() {
       data: [
         { name: 'Mantenimiento integral', slug: 'mantenimiento-integral', summary: 'Mantenimiento preventivo y correctivo.', description: 'Planes de mantenimiento para edificios.', sortOrder: 0 },
         { name: 'Remodelaciones', slug: 'remodelaciones', summary: 'Renovación de espacios.', description: 'Remodelación de oficinas y viviendas.', sortOrder: 10 },
+        // Same slug as the real catalogue, so the photo mapping is exercised end to end.
+        { name: 'Sistemas neumáticos para camales', slug: 'sistemas-neumaticos-camales', summary: 'Circuitos neumáticos para faenamiento.', description: 'Diseño e instalación de circuitos neumáticos para plantas de faenamiento.', sortOrder: 20 },
       ],
     });
     console.log('E2E database ready.');

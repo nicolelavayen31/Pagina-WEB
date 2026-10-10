@@ -4,51 +4,66 @@ import { syncRolesAndPermissions } from '../src/modules/auth/rbac-sync';
 
 const prisma = new PrismaClient();
 
-// Initial catalogue. `update: {}` keeps any later edits made from the admin panel.
+// Service catalogue. `update: {}` keeps any later edits made from the admin panel.
+// Slugs must match SERVICE_PHOTOS in apps/web/src/lib/site-photos.ts.
 const INITIAL_SERVICES = [
   {
-    slug: 'mantenimiento-integral',
-    name: 'Mantenimiento integral de edificios',
-    summary: 'Mantenimiento preventivo y correctivo para edificios, oficinas y locales comerciales.',
+    slug: 'sistemas-neumaticos-camales',
+    name: 'Sistemas neumáticos para camales',
+    summary: 'Circuitos neumáticos para el accionamiento de equipos de faenamiento.',
     description:
-      'Planes de mantenimiento preventivo y correctivo: revisión periódica de instalaciones, reparaciones, cubiertas, fachadas y áreas comunes.',
+      'Diseño e instalación de circuitos neumáticos con válvulas, reguladores y líneas de aire para el accionamiento de equipos en plantas de faenamiento.',
   },
   {
-    slug: 'remodelaciones',
-    name: 'Remodelaciones y adecuaciones',
-    summary: 'Renovación de espacios residenciales, comerciales y corporativos.',
+    slug: 'estudio-electrico-anomalias-consumo',
+    name: 'Estudio eléctrico para detección de anomalías de consumo',
+    summary: 'Mediciones eléctricas para detectar consumos anómalos.',
     description:
-      'Rediseño y adecuación de espacios: demoliciones controladas, tabiquería, cielos rasos, pisos y acabados, coordinando todo el proceso de obra.',
+      'Mediciones de tensión y corriente en tableros e instalaciones eléctricas para identificar consumos anómalos y puntos de mejora.',
   },
   {
-    slug: 'construccion-obra-civil',
-    name: 'Construcción y obra civil',
-    summary: 'Ejecución de obra nueva y ampliaciones con control técnico y presupuestario.',
+    slug: 'control-quemadores-secadoras-arroz',
+    name: 'Control de quemadores industriales con HMI para secadoras de arroz',
+    summary: 'Tableros de control con HMI para quemadores de secadoras de arroz.',
     description:
-      'Construcción de obra nueva y ampliaciones: planificación, cimentación, estructura, mampostería y dirección técnica con seguimiento de costos y plazos.',
+      'Diseño y construcción de sistemas de control para quemadores industriales, con interfaz HMI para la operación de secadoras de arroz.',
   },
   {
-    slug: 'instalaciones-electricas',
-    name: 'Instalaciones eléctricas',
-    summary: 'Diseño, instalación y mantenimiento de sistemas eléctricos.',
+    slug: 'testigos-temperatura-camaras-secado',
+    name: 'Testigos de temperatura para cámaras de secado de granos',
+    summary: 'Indicadores de temperatura para cámaras de secado de granos.',
     description:
-      'Instalaciones eléctricas nuevas, ampliaciones, tableros, iluminación y mantenimiento correctivo conforme a la normativa vigente.',
+      'Diseño y construcción de tableros con indicadores de temperatura para supervisar cada cámara de secado de granos.',
   },
   {
-    slug: 'plomeria-sanitarias',
-    name: 'Plomería e instalaciones sanitarias',
-    summary: 'Redes de agua potable, desagües y reparación de fugas.',
-    description:
-      'Instalación y reparación de redes de agua potable y sanitarias, detección y reparación de fugas, y mantenimiento de equipos de bombeo.',
+    slug: 'aturdidores-electricos-porcinos',
+    name: 'Aturdidores eléctricos para ganado porcino',
+    summary: 'Equipos de aturdimiento eléctrico para faenamiento porcino.',
+    description: 'Diseño y construcción de aturdidores eléctricos para plantas de faenamiento de ganado porcino.',
   },
   {
-    slug: 'pintura-acabados',
-    name: 'Pintura y acabados',
-    summary: 'Pintura interior y exterior, impermeabilización y acabados.',
+    slug: 'tableros-camaras-frigorificas',
+    name: 'Tableros de control y fuerza para cámaras frigoríficas',
+    summary: 'Tableros de control y fuerza para cámaras frigoríficas.',
     description:
-      'Preparación de superficies, pintura interior y exterior, impermeabilización de cubiertas y acabados decorativos para todo tipo de inmuebles.',
+      'Diseño y construcción de tableros de control y fuerza para cámaras frigoríficas, con mando de compresor, ventilación y deshielo.',
   },
 ];
+
+/**
+ * First generic catalogue, replaced by INITIAL_SERVICES. These rows are deactivated, never
+ * deleted: quote requests that reference them keep their service, and an admin can
+ * re-enable any of them from the panel.
+ */
+const RETIRED_SERVICE_SLUGS = [
+  'mantenimiento-integral',
+  'remodelaciones',
+  'construccion-obra-civil',
+  'instalaciones-electricas',
+  'plomeria-sanitarias',
+  'pintura-acabados',
+];
+const CATALOGUE_V2_MARKER = 'seed.service_catalogue_v2';
 
 async function seedServices() {
   for (const [index, service] of INITIAL_SERVICES.entries()) {
@@ -59,6 +74,26 @@ async function seedServices() {
     });
   }
   console.log(`Services ensured: ${INITIAL_SERVICES.length}`);
+
+  // Retire the generic catalogue only once, so a later manual re-activation survives re-seeding.
+  const alreadyApplied = await prisma.auditLog.findFirst({ where: { action: CATALOGUE_V2_MARKER } });
+  if (alreadyApplied) {
+    console.log('Generic catalogue already retired earlier: left as is.');
+    return;
+  }
+  const retired = await prisma.service.updateMany({
+    where: { slug: { in: RETIRED_SERVICE_SLUGS }, isActive: true },
+    data: { isActive: false },
+  });
+  await prisma.auditLog.create({
+    data: {
+      action: CATALOGUE_V2_MARKER,
+      entityType: 'Service',
+      entityId: 'catalogue',
+      metadata: { deactivated: retired.count, slugs: RETIRED_SERVICE_SLUGS },
+    },
+  });
+  console.log(`Generic services deactivated (not deleted): ${retired.count}`);
 }
 
 /**

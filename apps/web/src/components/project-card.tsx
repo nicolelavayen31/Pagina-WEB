@@ -12,7 +12,6 @@ type Props = {
 export function ProjectCard({ project, headingLevel = 'h3', variant = 'compact' }: Props) {
   const Heading = headingLevel;
   const cover = project.images.find((image) => image.id === project.coverImageId) ?? project.images[0];
-  const year = project.publishedAt ? new Date(project.publishedAt).getFullYear() : null;
   const detailed = variant === 'detailed';
 
   return (
@@ -39,18 +38,13 @@ export function ProjectCard({ project, headingLevel = 'h3', variant = 'compact' 
           </Link>
         </Heading>
         <p>{project.summary}</p>
+        {/* No year: the only date stored is the web publication date, not when the job was done. */}
         {detailed ? (
           <dl className="project-card__meta">
             <div>
               <dt className="sr-only">Ubicación</dt>
               <dd>{project.location}</dd>
             </div>
-            {year ? (
-              <div>
-                <dt className="sr-only">Año</dt>
-                <dd>{year}</dd>
-              </div>
-            ) : null}
           </dl>
         ) : null}
       </div>

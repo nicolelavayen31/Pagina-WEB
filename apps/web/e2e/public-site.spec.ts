@@ -186,11 +186,35 @@ test.describe('Public site', () => {
     await expect(card).toBeVisible();
     await expect(card.getByText(electric)).toBeVisible();
     await expect(card.getByText('Cuenca')).toBeVisible();
-    await expect(card.getByText(String(new Date().getFullYear()))).toBeVisible();
+    // The publication year is not shown: it is not the year the job was done.
+    await expect(card.getByText(String(new Date().getFullYear()))).toHaveCount(0);
     await expect(page.getByRole('article').filter({ hasText: `Fachada ${suffix}` })).toHaveCount(0);
 
     await card.getByRole('link', { name: `Tablero ${suffix}` }).click();
     await expect(page.getByRole('heading', { level: 1, name: `Tablero ${suffix}` })).toBeVisible();
+  });
+
+  test('services page: catalogue with photos, no repeated buttons, link to projects', async ({ page }) => {
+    await page.goto('/servicios');
+    await expect(page.getByRole('heading', { level: 1, name: 'Lo que diseñamos y construimos' })).toBeVisible();
+
+    const cards = page.locator('.service-tile');
+    await expect(cards).toHaveCount(3);
+    // No call-to-action repeated inside every card.
+    await expect(cards.getByRole('link')).toHaveCount(0);
+    await expect(cards.getByRole('button')).toHaveCount(0);
+
+    // A catalogue service with a confirmed photo shows it; the photo really loads.
+    const pneumatic = cards.filter({ hasText: 'Sistemas neumáticos para camales' });
+    const img = pneumatic.locator('img');
+    await expect(img).toBeVisible();
+    await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+
+    // Exactly one quote action in the page body (the closing band) and a distinct link to projects.
+    const main = page.locator('main');
+    await expect(main.getByRole('link', { name: 'Solicitar cotización' })).toHaveCount(1);
+    await main.getByRole('link', { name: 'Ver proyectos realizados' }).click();
+    await expect(page).toHaveURL(/\/proyectos$/);
   });
 
   test('drafts are not visible on the public site', async ({ page, request }) => {

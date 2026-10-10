@@ -38,17 +38,24 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
 
   return (
     <main className="page-stack">
+      {/* Projects = concrete jobs already delivered (created from the admin panel with real data). */}
       <PageHero
         eyebrow="Proyectos"
         title="Obras que hablan por nosotros"
-        text="Una selección de trabajos de mantenimiento, remodelación y construcción."
+        text="Trabajos concretos realizados por nuestro equipo."
       />
 
       <section className="surface-section" aria-label="Catálogo de proyectos">
         {projects === null ? (
           <p className="alert error">No se pudieron cargar los proyectos. Inténtelo más tarde.</p>
         ) : projects.length === 0 ? (
-          <p className="hint">Aún no hay proyectos publicados.</p>
+          <p className="hint">
+            Pronto publicaremos los trabajos realizados. Mientras tanto, puede conocer nuestras{' '}
+            <Link href="/servicios" className="table-link">
+              especialidades
+            </Link>
+            .
+          </p>
         ) : (
           <>
             {categories.length > 1 ? (

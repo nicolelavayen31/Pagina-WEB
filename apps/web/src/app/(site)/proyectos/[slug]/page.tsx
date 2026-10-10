@@ -32,7 +32,6 @@ export default async function ProjectDetailPage({ params }: Props) {
   const project = await loadProject(slug);
   const cover = project.images.find((image) => image.id === project.coverImageId) ?? project.images[0];
   const gallery = project.images.filter((image) => image.id !== cover?.id);
-  const year = project.publishedAt ? new Date(project.publishedAt).getFullYear() : null;
 
   return (
     <main className="page-stack">
@@ -42,7 +41,6 @@ export default async function ProjectDetailPage({ params }: Props) {
         </Link>
         <p className="eyebrow page-hero__eyebrow">
           {project.category} · {project.location}
-          {year ? ` · ${year}` : ''}
         </p>
         <h1 id="proyecto-titulo">{project.title}</h1>
         <p>{project.summary}</p>

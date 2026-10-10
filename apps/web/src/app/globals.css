@@ -722,6 +722,111 @@ img {
   margin-top: 32px;
 }
 
+/* ============================================================ quote page */
+
+.on-dark .eyebrow {
+  color: var(--color-accent);
+}
+
+.quote-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 8fr);
+  gap: var(--gap-block);
+  align-items: stretch;
+  /* The sticky header must not cover the #cotizar anchor target. */
+  scroll-margin-top: 110px;
+}
+
+.quote-intro {
+  background: var(--color-navy) var(--stripes);
+  color: #fff;
+  border-radius: var(--radius-section);
+  padding: clamp(28px, 4vw, 40px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.quote-intro__main {
+  display: grid;
+  gap: 16px;
+}
+
+.quote-intro h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3.6vw, 2.75rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+}
+
+.quote-intro p {
+  margin: 0;
+  color: var(--color-on-dark-muted);
+}
+
+.steps {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: grid;
+  gap: 14px;
+  font-weight: 700;
+}
+
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.steps__number {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-navy);
+  font-weight: 800;
+}
+
+.quote-intro__contact {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.quote-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-section);
+  padding: clamp(24px, 4vw, 40px);
+}
+
+.form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.form-grid .field--full,
+.form-grid .cf-turnstile {
+  grid-column: 1 / -1;
+}
+
+.form-grid .hint {
+  margin: 6px 0 0;
+}
+
+.button--block {
+  width: 100%;
+  min-height: 56px;
+  font-size: 1rem;
+}
+
 /* ======================================================= project detail */
 
 .project-detail {
@@ -1219,7 +1324,8 @@ table.data td {
   }
 
   .split,
-  .split.even {
+  .split.even,
+  .quote-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1255,8 +1361,17 @@ table.data td {
     min-height: 200px;
   }
 
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
   .whatsapp-fab {
     right: 16px;
     bottom: 16px;
+  }
+
+  /* Room so the floating WhatsApp button never hides the end of the page. */
+  .page-shell {
+    padding-bottom: 88px;
   }
 }

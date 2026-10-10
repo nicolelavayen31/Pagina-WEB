@@ -49,6 +49,34 @@ test.describe('Public site', () => {
     expect(lead).toMatchObject({ budgetRange: 'FROM_5K_TO_20K', status: 'NEW', service: { name: 'Remodelaciones' } });
   });
 
+  test('quote page keeps the exact same fields with the new two-column layout', async ({ page }) => {
+    await page.goto('/contacto');
+    await expect(page.getByRole('heading', { level: 1, name: 'Solicita una cotización sin compromiso' })).toBeVisible();
+    await expect(page.getByRole('list').filter({ hasText: 'Cuéntanos qué necesitas' }).getByRole('listitem')).toHaveCount(3);
+
+    const names = await page.locator('form.form-grid').evaluate((form: HTMLFormElement) =>
+      Array.from(form.elements)
+        .map((el) => (el as HTMLInputElement).name)
+        .filter(Boolean),
+    );
+    expect(names).toEqual(['name', 'company', 'email', 'phone', 'location', 'serviceId', 'budgetRange', 'description', 'website', 'privacyAccepted']);
+
+    for (const label of ['Nombre completo', 'Empresa (opcional)', 'Correo electrónico', 'Teléfono', 'Ubicación del proyecto', 'Tipo de servicio', 'Presupuesto aproximado', 'Descripción de la necesidad']) {
+      await expect(page.getByLabel(label)).toBeVisible();
+    }
+
+    const name = await page.getByLabel('Nombre completo').boundingBox();
+    const company = await page.getByLabel('Empresa (opcional)').boundingBox();
+    expect(name!.height).toBeGreaterThanOrEqual(52);
+    expect(await page.getByLabel('Nombre completo').evaluate((el) => getComputedStyle(el).fontSize)).toBe('16px');
+    const viewport = page.viewportSize()!;
+    if (viewport.width > 640) {
+      expect(Math.abs(name!.y - company!.y)).toBeLessThan(2); // same row
+    } else {
+      expect(company!.y).toBeGreaterThan(name!.y); // stacked
+    }
+  });
+
   test('quote form requires privacy consent before submitting', async ({ page }) => {
     await page.goto('/contacto');
     const consent = page.getByLabel(/acepto la/);

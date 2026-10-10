@@ -1,26 +1,54 @@
 import type { Metadata } from 'next';
+import { WhatsAppIcon } from '@/components/icons';
 import { QuoteForm } from '@/components/quote-form';
 import { getPublicServices } from '@/lib/api';
+import { whatsappHref } from '@/lib/contact';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = { title: 'Contacto' };
 
+const STEPS = ['Cuéntanos qué necesitas', 'Revisamos alcance y visitamos el sitio', 'Recibes tu propuesta por correo'];
+
 export default async function ContactPage() {
   const services = await getPublicServices().catch(() => []);
+  const whatsapp = whatsappHref();
 
   return (
-    <main className="container section">
-      <h1>Contacto</h1>
-      <div id="cotizar" className="split even">
-        <div>
+    <main id="cotizar" className="quote-layout">
+      <section className="quote-intro on-dark" aria-labelledby="cotizar-titulo">
+        <div className="quote-intro__main">
+          <p className="eyebrow">Cotización</p>
+          <h1 id="cotizar-titulo">Solicita una cotización sin compromiso</h1>
           <p>
-            Cuéntenos qué necesita y le responderemos con una propuesta. Los campos marcados como obligatorios son
-            necesarios para poder contactarle.
+            Comparte el detalle de tu necesidad y te responderemos con una propuesta enfocada en costo, cronograma y
+            alcance.
           </p>
+          <ol className="steps">
+            {STEPS.map((step, index) => (
+              <li key={step}>
+                <span className="steps__number" aria-hidden="true">
+                  {index + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
         </div>
+        {whatsapp ? (
+          <div className="quote-intro__contact">
+            <p>¿Prefieres hablar directamente?</p>
+            <a className="button accent" href={whatsapp} target="_blank" rel="noopener noreferrer">
+              <WhatsAppIcon />
+              Escríbenos por WhatsApp
+            </a>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="quote-card" aria-label="Formulario de cotización">
         <QuoteForm services={services} idPrefix="contacto" />
-      </div>
+      </section>
     </main>
   );
 }

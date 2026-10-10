@@ -73,7 +73,7 @@ export function QuoteForm({ services, idPrefix = 'quote' }: { services: PublicSe
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate={false} aria-describedby={`${idPrefix}-status`}>
+    <form className="form-grid" onSubmit={handleSubmit} noValidate={false} aria-describedby={`${idPrefix}-status`}>
       <div>
         <label htmlFor={id('name')}>Nombre completo</label>
         <input id={id('name')} name="name" autoComplete="name" required minLength={2} maxLength={120} {...errorProps('name')} />
@@ -103,7 +103,7 @@ export function QuoteForm({ services, idPrefix = 'quote' }: { services: PublicSe
         />
         {fieldError('phone')}
       </div>
-      <div>
+      <div className="field--full">
         <label htmlFor={id('location')}>Ubicación del proyecto</label>
         <input id={id('location')} name="location" required minLength={2} maxLength={120} {...errorProps('location')} />
         {fieldError('location')}
@@ -130,7 +130,7 @@ export function QuoteForm({ services, idPrefix = 'quote' }: { services: PublicSe
           ))}
         </select>
       </div>
-      <div>
+      <div className="field--full">
         <label htmlFor={id('description')}>Descripción de la necesidad</label>
         <textarea
           id={id('description')}
@@ -151,7 +151,7 @@ export function QuoteForm({ services, idPrefix = 'quote' }: { services: PublicSe
         <input id={id('website')} name="website" tabIndex={-1} autoComplete="off" />
       </div>
 
-      <div>
+      <div className="field--full">
         <label className="checkbox-row" htmlFor={id('privacyAccepted')}>
           <input id={id('privacyAccepted')} type="checkbox" name="privacyAccepted" required {...errorProps('privacyAccepted')} />
           <span>
@@ -167,11 +167,11 @@ export function QuoteForm({ services, idPrefix = 'quote' }: { services: PublicSe
 
       <TurnstileWidget />
 
-      <button className="button primary" type="submit" disabled={status === 'loading'}>
+      <button className="button primary button--block field--full" type="submit" disabled={status === 'loading'}>
         {status === 'loading' ? 'Enviando…' : 'Enviar solicitud'}
       </button>
 
-      <div id={`${idPrefix}-status`} aria-live="polite">
+      <div className="field--full" id={`${idPrefix}-status`} aria-live="polite">
         {message ? <p className={`alert ${status === 'success' ? 'success' : 'error'}`} role="status">{message}</p> : null}
       </div>
     </form>

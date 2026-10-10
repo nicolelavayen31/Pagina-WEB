@@ -639,6 +639,259 @@ img {
   font-size: 0.95rem;
 }
 
+/* ========================================================= work gallery */
+
+.section-head .section-head__hint {
+  margin: 6px 0 0;
+}
+
+.filter-pill {
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.filter-pill[aria-pressed='true'] {
+  background: var(--color-navy);
+  border-color: var(--color-navy);
+  color: #fff;
+}
+
+.work-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+@keyframes work-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.work-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--color-surface-alt);
+  /* `backwards`, not `both`: after entering, the hover transform must not be overridden. */
+  animation: work-in 0.45s ease backwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.work-card:hover,
+.work-card:focus-within {
+  box-shadow: 0 16px 36px rgba(11, 23, 48, 0.16);
+  transform: translateY(-4px);
+}
+
+.work-card__media {
+  position: relative;
+  height: 240px;
+  overflow: hidden;
+  background: var(--color-navy) var(--stripes);
+}
+
+.work-card__media img {
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.work-card:hover .work-card__media img {
+  transform: scale(1.06);
+}
+
+.work-card__tag {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(11, 23, 48, 0.12);
+}
+
+.work-card__body {
+  padding: 18px 22px 22px;
+  display: grid;
+  gap: 8px;
+}
+
+.work-card h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+/* The title button covers the whole card, so any click opens the detail. */
+.work-card__open {
+  all: unset;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.work-card__open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: var(--radius-card);
+}
+
+.work-card__open:focus-visible::after {
+  outline: 3px solid var(--color-primary);
+  outline-offset: -3px;
+}
+
+.work-card p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.work-card__more {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* ---------------------------------------------------------- detail modal */
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.work-dialog {
+  width: min(980px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-section);
+  background: var(--color-surface);
+  color: var(--color-text);
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(11, 23, 48, 0.35);
+}
+
+.work-dialog[open] {
+  animation: dialog-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.work-dialog::backdrop {
+  background: rgba(11, 23, 48, 0.72);
+  backdrop-filter: blur(3px);
+  animation: backdrop-in 0.3s ease;
+}
+
+.work-dialog__panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  max-height: calc(100dvh - 32px);
+}
+
+/* Whole photo, never cropped, so no equipment is hidden. */
+.work-dialog__media {
+  position: relative;
+  min-height: 420px;
+  background: var(--color-navy) var(--stripes);
+}
+
+.work-dialog__media img {
+  object-fit: contain;
+}
+
+.work-dialog__info {
+  padding: clamp(24px, 4vw, 40px);
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.work-dialog__tag {
+  justify-self: start;
+  background: var(--color-primary-soft);
+}
+
+.work-dialog__info h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+  font-weight: 800;
+}
+
+.work-dialog__info p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.work-dialog__info ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+}
+
+.work-dialog__info .button {
+  justify-self: start;
+  margin-top: 8px;
+}
+
+.work-dialog__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: var(--button-height);
+  height: var(--button-height);
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-navy);
+  cursor: pointer;
+}
+
+.work-dialog__close svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 860px) {
+  .work-dialog__panel {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .work-dialog__media {
+    min-height: 0;
+    height: 46vh;
+  }
+}
+
 /* ===================================================== services catalogue */
 
 .service-catalogue {

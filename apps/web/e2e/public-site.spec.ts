@@ -138,6 +138,20 @@ test.describe('Public site', () => {
     }
   });
 
+  test('phone pattern is a valid regex and is enforced by the browser', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', (msg) => {
+      if (/Pattern attribute value/.test(msg.text())) errors.push(msg.text());
+    });
+    await page.goto('/contacto');
+    const phone = page.getByLabel('Teléfono');
+    await phone.fill('+593 (99) 123-4567');
+    expect(await phone.evaluate((el: HTMLInputElement) => el.checkValidity())).toBe(true);
+    await phone.fill('099 abc 4567');
+    expect(await phone.evaluate((el: HTMLInputElement) => el.validity.patternMismatch)).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
   test('quote form requires privacy consent before submitting', async ({ page }) => {
     await page.goto('/contacto');
     const consent = page.getByLabel(/acepto la/);
@@ -215,6 +229,46 @@ test.describe('Public site', () => {
     await expect(main.getByRole('link', { name: 'Solicitar cotización' })).toHaveCount(1);
     await main.getByRole('link', { name: 'Ver proyectos realizados' }).click();
     await expect(page).toHaveURL(/\/proyectos$/);
+  });
+
+  test('projects gallery: filter by type and open an animated detail dialog', async ({ page }) => {
+    await page.goto('/proyectos');
+    const gallery = page.locator('section[aria-labelledby="galeria-titulo"]');
+    const cards = gallery.locator('.work-card');
+    await expect(cards).toHaveCount(5);
+    for (const img of await cards.locator('img').all()) {
+      await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+    }
+
+    // Filter
+    const filters = page.getByRole('group', { name: 'Filtrar trabajos por tipo' });
+    await filters.getByRole('button', { name: 'Refrigeración' }).click();
+    await expect(filters.getByRole('button', { name: 'Refrigeración' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(cards).toHaveCount(1);
+    await filters.getByRole('button', { name: 'Todos' }).click();
+    await expect(cards).toHaveCount(5);
+
+    // Clicking anywhere on the card (the photo included) opens the detail: the title button covers the card.
+    await cards.filter({ hasText: 'Sistema neumático para camal' }).click({ position: { x: 60, y: 60 } });
+    const dialog = page.getByRole('dialog', { name: 'Sistema neumático para camal' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('listitem')).toHaveCount(3);
+    await expect(dialog.getByRole('link', { name: 'Solicitar un trabajo similar' })).toHaveAttribute('href', '/contacto#cotizar');
+    const photo = dialog.locator('img');
+    await expect.poll(() => photo.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+
+    // Esc closes and focus returns to the card that opened it
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Sistema neumático para camal' })).toBeFocused();
+
+    // Close button and backdrop also close it
+    await page.getByRole('button', { name: 'Tablero de control de quemador' }).click();
+    await page.getByRole('button', { name: 'Cerrar detalle' }).click();
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await page.getByRole('button', { name: 'Tablero de control de quemador' }).click();
+    await page.mouse.click(5, 5);
+    await expect(page.getByRole('dialog')).toBeHidden();
   });
 
   test('drafts are not visible on the public site', async ({ page, request }) => {

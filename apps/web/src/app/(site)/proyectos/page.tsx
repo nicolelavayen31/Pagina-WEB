@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { CtaBand } from '@/components/cta-band';
 import { PageHero } from '@/components/page-hero';
 import { ProjectCard } from '@/components/project-card';
+import { WorkGallery } from '@/components/work-gallery';
 import { getAllPublicProjects } from '@/lib/api';
+import { WORK_GALLERY } from '@/lib/site-photos';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,17 +47,11 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
         text="Trabajos concretos realizados por nuestro equipo."
       />
 
+      {/* Documented projects created from the admin panel (shown only when there are any). */}
+      {projects === null || projects.length > 0 ? (
       <section className="surface-section" aria-label="Catálogo de proyectos">
         {projects === null ? (
           <p className="alert error">No se pudieron cargar los proyectos. Inténtelo más tarde.</p>
-        ) : projects.length === 0 ? (
-          <p className="hint">
-            Pronto publicaremos los trabajos realizados. Mientras tanto, puede conocer nuestras{' '}
-            <Link href="/servicios" className="table-link">
-              especialidades
-            </Link>
-            .
-          </p>
         ) : (
           <>
             {categories.length > 1 ? (
@@ -106,6 +102,22 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Sea
             ) : null}
           </>
         )}
+      </section>
+      ) : null}
+
+      {/* Photo gallery of completed work: texts describe only what each photo shows. */}
+      <section className="surface-section" aria-labelledby="galeria-titulo">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Galería</p>
+            <h2 id="galeria-titulo">Trabajos realizados</h2>
+            <p className="hint section-head__hint">Selecciona un trabajo para ver el detalle.</p>
+          </div>
+          <Link href="/servicios" className="button outline">
+            Ver servicios
+          </Link>
+        </div>
+        <WorkGallery items={WORK_GALLERY} />
       </section>
 
       <CtaBand title="¿Tienes un proyecto parecido? Cuéntanos qué necesitas." text="" action="Solicitar cotización" />

@@ -46,6 +46,83 @@ export const HERO_SLIDES: GallerySlide[] = [
 ];
 
 /**
+ * Projects page gallery. Texts describe only what is visible in each photo: no client,
+ * location or date is stated because none is documented. Add pending photos here once
+ * their classification is confirmed (see apps/web/assets/photos/README.md).
+ */
+export type WorkItem = {
+  id: string;
+  photo: SitePhoto;
+  title: string;
+  category: string;
+  summary: string;
+  details: string[];
+};
+
+export const WORK_GALLERY: WorkItem[] = [
+  {
+    id: 'sistema-neumatico-camal',
+    photo: PHOTOS.pneumatic,
+    title: 'Sistema neumático para camal',
+    category: 'Neumática',
+    summary: 'Montaje de válvulas y reguladores de presión con líneas de aire sobre estructura de acero inoxidable.',
+    details: [
+      'Válvula de mando y reguladores de presión con manómetro',
+      'Tubería neumática con conexiones rápidas y codos',
+      'Montaje sobre estructura de acero inoxidable',
+    ],
+  },
+  {
+    id: 'tablero-control-quemador',
+    photo: PHOTOS.burnerPanel,
+    title: 'Tablero de control de quemador',
+    category: 'Automatización',
+    summary: 'Tablero de mando para quemador y extractor con señalización, paro de emergencia y controladores.',
+    details: [
+      'Pilotos de falla térmica y presencia de 220 V',
+      'Paro de emergencia, pulsadores de marcha y paro',
+      'Controladores C1 y C2 con indicadores de temperatura TT_1 a TT_3',
+    ],
+  },
+  {
+    id: 'testigos-camaras-secado',
+    photo: PHOTOS.dryingChambers,
+    title: 'Testigos de temperatura de cámaras de secado',
+    category: 'Control de temperatura',
+    summary: 'Tablero con un controlador de temperatura por cámara de secado, selectores y pilotos de señalización.',
+    details: [
+      'Controladores de temperatura rotulados por cámara de secado',
+      'Selector y piloto de señalización por cámara',
+      'Seccionador general en la puerta del tablero',
+    ],
+  },
+  {
+    id: 'medicion-tablero-distribucion',
+    photo: PHOTOS.electricalMeasurement,
+    title: 'Medición eléctrica en tablero de distribución',
+    category: 'Estudio eléctrico',
+    summary: 'Medición de tensión y corriente en un tablero de distribución para el análisis del consumo.',
+    details: [
+      'Multímetro Fluke 287 con lectura de 209,65 VAC',
+      'Pinza amperimétrica Fluke 376 con sonda flexible (lectura 49,3)',
+      'Medición realizada sobre el tablero de breakers en servicio',
+    ],
+  },
+  {
+    id: 'tablero-camara-frigorifica',
+    photo: PHOTOS.coldRoom,
+    title: 'Tablero de control para cámara frigorífica',
+    category: 'Refrigeración',
+    summary: 'Tablero para dos circuitos de refrigeración con controladores de temperatura y señalización de cada etapa.',
+    details: [
+      'Dos controladores digitales de temperatura',
+      'Pilotos de compresor, ventilación y deshielo por circuito',
+      'Selector de encendido independiente para cada circuito',
+    ],
+  },
+];
+
+/**
  * Keyed by service slug. Prepared for the new service catalogue (pending approval of the
  * seed change); services without an entry keep the striped navy background.
  */

@@ -98,7 +98,9 @@ export function QuoteForm({ services, idPrefix = 'quote' }: { services: PublicSe
           required
           minLength={7}
           maxLength={30}
-          pattern="[0-9+()\-\s]+"
+          // Same characters as the API regex; parentheses escaped because browsers compile
+          // `pattern` with the `v` flag, where an unescaped "(" inside a class is a syntax error.
+          pattern="[0-9+\(\)\-\s]+"
           {...errorProps('phone')}
         />
         {fieldError('phone')}

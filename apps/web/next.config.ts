@@ -34,6 +34,10 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
   poweredByHeader: false,
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    localPatterns: [{ pathname: '/images/**', search: '' }],
+  },
   async rewrites() {
     return [{ source: '/api/:path*', destination: `${apiInternalUrl}/api/:path*` }];
   },

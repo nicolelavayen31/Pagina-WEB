@@ -11,7 +11,19 @@ test.describe('Public site', () => {
     expect(headers['x-powered-by']).toBeUndefined();
 
     await expect(page.getByRole('heading', { name: 'Mantenimiento integral' })).toBeVisible();
-    await expect(page.getByLabel('Tipo de servicio').first()).toContainText('Remodelaciones');
+    await expect(page.getByRole('heading', { name: 'Remodelaciones' })).toBeVisible();
+
+    // Active link and real photos (hero + the service that has a photo) actually load.
+    const nav = page.getByRole('navigation', { name: 'Navegación principal' });
+    await expect(nav.getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page');
+    for (const img of await page.locator('.hero img, .service-card img').all()) {
+      await expect(img).toBeVisible();
+      expect(await img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+    }
+    expect(await page.locator('.service-card img').count()).toBeGreaterThan(0);
+
+    await page.getByRole('link', { name: 'Empezar ahora' }).click();
+    await expect(page).toHaveURL(/\/contacto#cotizar/);
   });
 
   test('quote form persists a request and shows a success message', async ({ page, request }) => {
@@ -77,6 +89,15 @@ test.describe('Public site', () => {
     await page.goto('/');
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
-    await expect(page.getByRole('button', { name: 'Enviar solicitud' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Empezar ahora' })).toBeVisible();
+
+    // Phone layout: the menu collapses behind an accessible toggle.
+    const toggle = page.getByRole('button', { name: 'Abrir menú' });
+    if (await toggle.isVisible()) {
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      await toggle.click();
+      await expect(page.getByRole('button', { name: 'Cerrar menú' })).toHaveAttribute('aria-expanded', 'true');
+      await expect(page.getByRole('navigation', { name: 'Navegación principal' }).getByRole('link', { name: 'Servicios' })).toBeVisible();
+    }
   });
 });

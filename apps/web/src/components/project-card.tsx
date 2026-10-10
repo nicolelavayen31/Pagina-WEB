@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { mediaUrl, type PublicProject } from '@/lib/api';
 
@@ -6,23 +7,27 @@ export function ProjectCard({ project, headingLevel = 'h3' }: { project: PublicP
   const cover = project.images.find((image) => image.id === project.coverImageId) ?? project.images[0];
 
   return (
-    <article className="card">
-      <div className="card-media">
+    <article className="project-card">
+      <div className="project-card__media">
         {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element -- served by the API with its own cache headers
-          <img src={mediaUrl(cover.id)} alt={cover.altText ?? project.title} loading="lazy" />
+          // Served by the API already resized and re-encoded to WebP, so Next does not re-optimise it.
+          <Image
+            src={mediaUrl(cover.id)}
+            alt={cover.altText ?? ''}
+            fill
+            unoptimized
+            sizes="(max-width: 640px) 100vw, (max-width: 960px) 50vw, 33vw"
+          />
         ) : (
           <span>Sin imagen</span>
         )}
       </div>
-      <div style={{ padding: 20 }}>
-        <p style={{ color: 'var(--primary)', fontWeight: 700, margin: 0 }}>{project.category}</p>
-        <Heading>{project.title}</Heading>
-        <p>{project.summary}</p>
-        <Link href={`/proyectos/${project.slug}`} className="button primary">
-          Ver proyecto
+      <Heading>
+        <Link href={`/proyectos/${project.slug}`} className="project-card__link">
+          {project.title}
         </Link>
-      </div>
+      </Heading>
+      <p>{project.summary}</p>
     </article>
   );
 }

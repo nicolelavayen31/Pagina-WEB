@@ -1,6 +1,7 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
+import type { AuthenticatedRequest } from '../http/authenticated-request';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -16,12 +17,14 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const userPermissions: string[] = request.user?.permissions || [];
-    const allowed = requiredPermissions.every((permission) => userPermissions.includes(permission));
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    if (!request.user) {
+      throw new UnauthorizedException('Sesión no válida o expirada');
+    }
 
+    const allowed = requiredPermissions.every((permission) => request.user!.permissions.includes(permission));
     if (!allowed) {
-      throw new ForbiddenException('Permission denied');
+      throw new ForbiddenException('No tiene permiso para realizar esta acción');
     }
 
     return true;

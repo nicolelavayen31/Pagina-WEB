@@ -1,138 +1,196 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Prisma, ProjectStatus } from '@prisma/client';
+import type { ProjectCreateInput, ProjectUpdateInput } from '@repo/contracts';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ProjectStatus } from '@prisma/client';
+import { AuditService } from '../audit/audit.service';
+import { StorageService } from '../media/storage/storage.service';
+
+const imageOrder = [{ sortOrder: 'asc' }, { createdAt: 'asc' }] satisfies Prisma.ProjectImageOrderByWithRelationInput[];
+
+/** Public responses never include authorship, internal ids or storage keys. */
+export const publicProjectSelect = {
+  id: true,
+  title: true,
+  slug: true,
+  summary: true,
+  description: true,
+  category: true,
+  location: true,
+  publishedAt: true,
+  coverImageId: true,
+  images: { select: { id: true, altText: true, caption: true, sortOrder: true }, orderBy: imageOrder },
+} satisfies Prisma.ProjectSelect;
+
+const adminProjectInclude = {
+  images: {
+    select: { id: true, altText: true, caption: true, sortOrder: true, width: true, height: true, sizeBytes: true },
+    orderBy: imageOrder,
+  },
+  creator: { select: { id: true, name: true, email: true } },
+  updater: { select: { id: true, name: true, email: true } },
+} satisfies Prisma.ProjectInclude;
 
 @Injectable()
 export class ProjectsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(ProjectsService.name);
 
-  async listPublic() {
-    return this.prisma.project.findMany({
-      where: { status: 'PUBLISHED' },
-      include: {
-        images: {
-          orderBy: { sortOrder: 'asc' },
-        },
-      },
-      orderBy: { publishedAt: 'desc' },
-    });
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
+    private readonly storage: StorageService,
+  ) {}
+
+  async listPublic(page: number, pageSize: number) {
+    const where = { status: ProjectStatus.PUBLISHED };
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.project.findMany({
+        where,
+        select: publicProjectSelect,
+        orderBy: { publishedAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.project.count({ where }),
+    ]);
+    return { items, total, page, pageSize };
   }
 
   async findPublicBySlug(slug: string) {
     const project = await this.prisma.project.findFirst({
-      where: { slug, status: 'PUBLISHED' },
-      include: { images: { orderBy: { sortOrder: 'asc' } } },
+      where: { slug, status: ProjectStatus.PUBLISHED },
+      select: publicProjectSelect,
     });
-
     if (!project) {
-      throw new NotFoundException('Project not found');
+      throw new NotFoundException('Proyecto no encontrado');
     }
-
     return project;
   }
 
-  async listAdmin() {
-    return this.prisma.project.findMany({
-      orderBy: { updatedAt: 'desc' },
-      include: {
-        images: { orderBy: { sortOrder: 'asc' } },
-        creator: { select: { id: true, name: true, email: true } },
-      },
-    });
+  async listAdmin(page: number, pageSize: number) {
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.project.findMany({
+        orderBy: { updatedAt: 'desc' },
+        include: adminProjectInclude,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.project.count(),
+    ]);
+    return { items, total, page, pageSize };
   }
 
-  async create(payload: any, userId: string) {
-    const slug = payload.slug || this.slugify(payload.title);
+  async findAdminById(id: string) {
+    const project = await this.prisma.project.findUnique({ where: { id }, include: adminProjectInclude });
+    if (!project) {
+      throw new NotFoundException('Proyecto no encontrado');
+    }
+    return project;
+  }
 
-    const exists = await this.prisma.project.findUnique({ where: { slug } });
-    if (exists) {
-      throw new BadRequestException('Project slug already exists');
+  async create(input: ProjectCreateInput, userId: string) {
+    const project = await this.prisma.project.create({
+      data: { ...input, status: ProjectStatus.DRAFT, createdById: userId, updatedById: userId },
+      include: adminProjectInclude,
+    });
+    await this.audit.log(userId, 'project.created', 'Project', project.id);
+    return project;
+  }
+
+  async update(id: string, input: ProjectUpdateInput, userId: string) {
+    await this.getOrThrow(id);
+
+    if (input.coverImageId) {
+      const image = await this.prisma.projectImage.findFirst({
+        where: { id: input.coverImageId, projectId: id },
+        select: { id: true },
+      });
+      if (!image) {
+        throw new BadRequestException({ statusCode: 400, message: 'La portada debe ser una imagen del proyecto' });
+      }
     }
 
-    return this.prisma.project.create({
-      data: {
-        ...payload,
-        slug,
-        createdById: userId,
-        updatedById: userId,
-        status: payload.status || 'DRAFT',
-      },
-      include: { images: { orderBy: { sortOrder: 'asc' } } },
-    });
-  }
-
-  async update(id: string, payload: any, userId: string) {
-    const project = await this.prisma.project.findUnique({ where: { id } });
-    if (!project) throw new NotFoundException('Project not found');
-
-    return this.prisma.project.update({
+    const project = await this.prisma.project.update({
       where: { id },
-      data: {
-        ...payload,
-        updatedById: userId,
-      },
-      include: { images: { orderBy: { sortOrder: 'asc' } } },
+      data: { ...input, updatedById: userId },
+      include: adminProjectInclude,
     });
+    await this.audit.log(userId, 'project.updated', 'Project', id, { fields: Object.keys(input) });
+    return project;
   }
 
   async publish(id: string, userId: string) {
-    const project = await this.prisma.project.findUnique({ where: { id } });
-    if (!project) throw new NotFoundException('Project not found');
-
-    if (!project.title || !project.summary || !project.description || !project.category || !project.location) {
-      throw new BadRequestException('Project is missing required fields');
+    const project = await this.getOrThrow(id);
+    if (project.status === ProjectStatus.PUBLISHED) {
+      throw new ConflictException('El proyecto ya está publicado');
     }
-
-    return this.prisma.project.update({
-      where: { id },
-      data: {
-        status: ProjectStatus.PUBLISHED,
-        publishedAt: new Date(),
-        updatedById: userId,
-      },
+    return this.changeStatus(id, userId, 'project.published', {
+      status: ProjectStatus.PUBLISHED,
+      publishedAt: new Date(),
     });
   }
 
   async unpublish(id: string, userId: string) {
-    const project = await this.prisma.project.findUnique({ where: { id } });
-    if (!project) throw new NotFoundException('Project not found');
-
-    return this.prisma.project.update({
-      where: { id },
-      data: {
-        status: ProjectStatus.DRAFT,
-        updatedById: userId,
-      },
-    });
+    const project = await this.getOrThrow(id);
+    if (project.status !== ProjectStatus.PUBLISHED) {
+      throw new ConflictException('Solo se pueden despublicar proyectos publicados');
+    }
+    return this.changeStatus(id, userId, 'project.unpublished', { status: ProjectStatus.DRAFT, publishedAt: null });
   }
 
   async archive(id: string, userId: string) {
-    const project = await this.prisma.project.findUnique({ where: { id } });
-    if (!project) throw new NotFoundException('Project not found');
+    const project = await this.getOrThrow(id);
+    if (project.status === ProjectStatus.ARCHIVED) {
+      throw new ConflictException('El proyecto ya está archivado');
+    }
+    return this.changeStatus(id, userId, 'project.archived', { status: ProjectStatus.ARCHIVED });
+  }
 
-    return this.prisma.project.update({
+  async assignAuthor(id: string, authorId: string, actorId: string) {
+    await this.getOrThrow(id);
+    const author = await this.prisma.user.findFirst({ where: { id: authorId, isActive: true }, select: { id: true } });
+    if (!author) {
+      throw new BadRequestException({ statusCode: 400, message: 'El autor indicado no existe o está inactivo' });
+    }
+    const project = await this.prisma.project.update({
       where: { id },
-      data: {
-        status: ProjectStatus.ARCHIVED,
-        updatedById: userId,
-      },
+      data: { createdById: authorId, updatedById: actorId },
+      include: adminProjectInclude,
     });
+    await this.audit.log(actorId, 'project.author_assigned', 'Project', id, { authorId });
+    return project;
   }
 
-  async remove(id: string) {
-    const project = await this.prisma.project.findUnique({ where: { id } });
-    if (!project) throw new NotFoundException('Project not found');
+  async remove(id: string, userId: string) {
+    await this.getOrThrow(id);
+    const images = await this.prisma.projectImage.findMany({ where: { projectId: id }, select: { storageKey: true } });
 
-    return this.prisma.project.delete({ where: { id } });
+    await this.prisma.project.delete({ where: { id } });
+
+    for (const image of images) {
+      await this.storage.delete(image.storageKey).catch((error: Error) => {
+        this.logger.error(`Could not delete stored file ${image.storageKey}`, error.stack);
+      });
+    }
+
+    await this.audit.log(userId, 'project.deleted', 'Project', id, { images: images.length });
+    return { success: true };
   }
 
-  private slugify(value: string): string {
-    return value
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .slice(0, 90);
+  private async getOrThrow(id: string) {
+    const project = await this.prisma.project.findUnique({ where: { id }, select: { id: true, status: true } });
+    if (!project) {
+      throw new NotFoundException('Proyecto no encontrado');
+    }
+    return project;
+  }
+
+  private async changeStatus(id: string, userId: string, action: string, data: Prisma.ProjectUpdateInput) {
+    const project = await this.prisma.project.update({
+      where: { id },
+      data: { ...data, updater: { connect: { id: userId } } },
+      include: adminProjectInclude,
+    });
+    await this.audit.log(userId, action, 'Project', id);
+    return project;
   }
 }

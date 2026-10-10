@@ -5,46 +5,48 @@
   "scripts": {
     "dev": "nest start --watch",
     "build": "nest build",
-    "start": "node dist/main",
-    "lint": "eslint \"src/**/*.ts\" --max-warnings 0",
-    "test": "jest --runInBand",
+    "start": "node dist/main.js",
+    "lint": "eslint . --max-warnings 0",
+    "test": "jest --config jest.config.js",
+    "test:int": "jest --config jest.int.config.js --runInBand",
     "typecheck": "tsc --noEmit",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "db:seed": "ts-node prisma/seed.ts"
+    "e2e:prepare": "ts-node --transpile-only test/e2e/prepare-e2e-db.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
-    "@nestjs/jwt": "^11.0.0",
-    "@nestjs/passport": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/throttler": "^6.0.0",
-    "@prisma/client": "6.19.2",
+    "@prisma/client": "6.19.3",
     "@repo/contracts": "workspace:*",
     "argon2": "^0.41.1",
-    "class-transformer": "^0.5.0",
-    "class-validator": "^0.14.0",
     "cookie-parser": "^1.4.7",
-    "passport": "^0.7.0",
-    "passport-jwt": "^4.0.0",
+    "helmet": "^8.3.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.6.0",
+    "sharp": "^0.35.5",
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@nestjs/cli": "^11.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.3.0",
     "@types/node": "^22.15.0",
-    "@types/passport-jwt": "^4.0.1",
+    "@types/supertest": "^7.2.1",
     "eslint": "^9.24.0",
     "jest": "^30.0.0",
-    "prisma": "6.19.2",
+    "prisma": "6.19.3",
+    "supertest": "^7.3.1",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.2",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "typescript-eslint": "^8.71.1"
+  },
+  "prisma": {
+    "seed": "ts-node --transpile-only prisma/seed.ts"
   }
 }

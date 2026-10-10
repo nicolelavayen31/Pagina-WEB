@@ -1,28 +1,13 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import cookieParser from 'cookie-parser';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { configureApp } from './app.setup';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  const origin = process.env.CORS_ORIGIN || 'http://localhost:3000';
-
-  app.enableCors({
-    origin,
-    credentials: true,
-  });
-  app.use(cookieParser());
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-  app.setGlobalPrefix('api/v1');
-
-  await app.listen(process.env.PORT || 3001);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const { port } = configureApp(app);
+  await app.listen(port);
 }
 
 bootstrap();

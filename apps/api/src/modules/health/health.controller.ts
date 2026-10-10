@@ -1,14 +1,24 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
+import { PrismaService } from '../../prisma/prisma.service';
 
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
+  constructor(private readonly prisma: PrismaService) {}
+
   @Get('live')
   live() {
     return { status: 'ok' };
   }
 
   @Get('ready')
-  ready() {
-    return { status: 'ready' };
+  async ready() {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return { status: 'ready', database: 'up' };
+    } catch {
+      throw new ServiceUnavailableException({ status: 'not_ready', database: 'down' });
+    }
   }
 }

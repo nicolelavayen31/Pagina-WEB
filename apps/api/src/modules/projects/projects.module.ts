@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
+import { MediaModule } from '../media/media.module';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { PermissionsGuard } from '../../common/guards/permissions.guard';
 
 @Module({
+  imports: [MediaModule],
   controllers: [ProjectsController],
-  providers: [ProjectsService, RolesGuard, PermissionsGuard],
+  providers: [ProjectsService],
   exports: [ProjectsService],
 })
 export class ProjectsModule {}

@@ -1,53 +1,64 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { Response, Request } from 'express';
+import { Body, Controller, Get, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
+import type { CookieOptions, Request, Response } from 'express';
+import { loginSchema, type EnvConfig } from '@repo/contracts';
+import type { z } from 'zod';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { SessionAuthGuard } from '../../common/guards/session-auth.guard';
+import type { SessionUser } from '../../common/http/authenticated-request';
+import { loginRateLimit, RATE_LIMIT_WINDOW_MS } from '../../common/http/rate-limits';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { AuditService } from '../audit/audit.service';
 import { AuthService } from './auth.service';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { loginSchema } from '@repo/contracts';
+import { SESSION_COOKIE } from './session.constants';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly audit: AuditService,
+    private readonly config: ConfigService<EnvConfig, true>,
+  ) {}
 
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({ default: { limit: loginRateLimit, ttl: RATE_LIMIT_WINDOW_MS } })
   @Post('login')
-  async login(@Body() body: unknown, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const parsed = loginSchema.parse(body);
-    const user = await this.authService.validateUser(parsed.email, parsed.password);
-    const token = await this.authService.signTokenForUser(user);
+  @HttpCode(200)
+  async login(
+    @Body(new ZodValidationPipe(loginSchema)) body: z.infer<typeof loginSchema>,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const user = await this.authService.validateCredentials(body.email, body.password);
+    const session = await this.authService.createSession(user.id, req.headers['user-agent'] ?? null, req.ip ?? null);
 
-    await this.authService.createSession(user.id, req.headers['user-agent'] ?? null, req.ip ?? null);
+    res.cookie(SESSION_COOKIE, session.token, { ...this.cookieOptions(), expires: session.expiresAt });
+    await this.audit.log(user.id, 'auth.login', 'Session', session.sessionId);
 
-    res.cookie('session_token', token, {
+    return { user };
+  }
+
+  @Post('logout')
+  @HttpCode(200)
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    await this.authService.revokeSession(req.cookies?.[SESSION_COOKIE]);
+    res.clearCookie(SESSION_COOKIE, this.cookieOptions());
+    return { success: true };
+  }
+
+  @UseGuards(SessionAuthGuard)
+  @Get('me')
+  me(@CurrentUser() user: SessionUser) {
+    const { sessionId: _sessionId, ...publicUser } = user;
+    return publicUser;
+  }
+
+  private cookieOptions(): CookieOptions {
+    return {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: Number(process.env.SESSION_TTL_MS || 8 * 60 * 60 * 1000),
+      secure: this.config.get('NODE_ENV', { infer: true }) === 'production',
       path: '/',
-    });
-
-    return {
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        roles: user.roles,
-        permissions: user.permissions,
-      },
     };
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('me')
-  me(@Req() req: Request & { user: any }) {
-    return req.user;
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('logout')
-  logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('session_token');
-    return { success: true };
   }
 }

@@ -1,19 +1,28 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { PermissionsGuard } from '../../common/guards/permissions.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { Permissions } from '../../common/decorators/permissions.decorator';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  paginationSchema,
+  projectAuthorSchema,
+  projectCreateSchema,
+  projectUpdateSchema,
+  type ProjectCreateInput,
+  type ProjectUpdateInput,
+} from '@repo/contracts';
+import type { z } from 'zod';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { RequirePermissions } from '../../common/decorators/permissions.decorator';
+import type { SessionUser } from '../../common/http/authenticated-request';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { ProjectsService } from './projects.service';
-import { projectCreateSchema, projectUpdateSchema } from '@repo/contracts';
+
+type Pagination = z.infer<typeof paginationSchema>;
 
 @Controller()
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Get('projects')
-  listPublic() {
-    return this.projectsService.listPublic();
+  listPublic(@Query(new ZodValidationPipe(paginationSchema)) query: Pagination) {
+    return this.projectsService.listPublic(query.page, query.pageSize);
   }
 
   @Get('projects/:slug')
@@ -21,69 +30,68 @@ export class ProjectsController {
     return this.projectsService.findPublicBySlug(slug);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('ADMIN', 'PROJECT_MANAGER')
-  @Permissions('project:read')
+  @RequirePermissions('project:read')
   @Get('admin/projects')
-  listAdmin() {
-    return this.projectsService.listAdmin();
+  listAdmin(@Query(new ZodValidationPipe(paginationSchema)) query: Pagination) {
+    return this.projectsService.listAdmin(query.page, query.pageSize);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('ADMIN', 'PROJECT_MANAGER')
-  @Permissions('project:write')
-  @Post('admin/projects')
-  create(@Body() body: unknown, @Req() req: any) {
-    const parsed = projectCreateSchema.parse(body);
-    return this.projectsService.create(parsed, req.user.id);
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('ADMIN', 'PROJECT_MANAGER')
-  @Permissions('project:read')
+  @RequirePermissions('project:read')
   @Get('admin/projects/:id')
-  getAdminById(@Param('id') id: string) {
-    return this.projectsService.listAdmin().then((items) => items.find((item) => item.id === id));
+  getAdminById(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.projectsService.findAdminById(id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('ADMIN', 'PROJECT_MANAGER')
-  @Permissions('project:write')
+  @RequirePermissions('project:create')
+  @Post('admin/projects')
+  create(
+    @Body(new ZodValidationPipe(projectCreateSchema)) body: ProjectCreateInput,
+    @CurrentUser() user: SessionUser,
+  ) {
+    return this.projectsService.create(body, user.id);
+  }
+
+  @RequirePermissions('project:update')
   @Patch('admin/projects/:id')
-  update(@Param('id') id: string, @Body() body: unknown, @Req() req: any) {
-    const parsed = projectUpdateSchema.parse(body);
-    return this.projectsService.update(id, parsed, req.user.id);
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(new ZodValidationPipe(projectUpdateSchema)) body: ProjectUpdateInput,
+    @CurrentUser() user: SessionUser,
+  ) {
+    return this.projectsService.update(id, body, user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('ADMIN', 'PROJECT_MANAGER')
-  @Permissions('project:publish')
+  @RequirePermissions('project:publish')
   @Post('admin/projects/:id/publish')
-  publish(@Param('id') id: string, @Req() req: any) {
-    return this.projectsService.publish(id, req.user.id);
+  publish(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: SessionUser) {
+    return this.projectsService.publish(id, user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('ADMIN', 'PROJECT_MANAGER')
-  @Permissions('project:publish')
+  @RequirePermissions('project:unpublish')
   @Post('admin/projects/:id/unpublish')
-  unpublish(@Param('id') id: string, @Req() req: any) {
-    return this.projectsService.unpublish(id, req.user.id);
+  unpublish(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: SessionUser) {
+    return this.projectsService.unpublish(id, user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('ADMIN', 'PROJECT_MANAGER')
-  @Permissions('project:archive')
+  @RequirePermissions('project:archive')
   @Post('admin/projects/:id/archive')
-  archive(@Param('id') id: string, @Req() req: any) {
-    return this.projectsService.archive(id, req.user.id);
+  archive(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: SessionUser) {
+    return this.projectsService.archive(id, user.id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('ADMIN')
-  @Permissions('project:delete')
+  @RequirePermissions('project:assign_author')
+  @Patch('admin/projects/:id/author')
+  assignAuthor(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body(new ZodValidationPipe(projectAuthorSchema)) body: z.infer<typeof projectAuthorSchema>,
+    @CurrentUser() user: SessionUser,
+  ) {
+    return this.projectsService.assignAuthor(id, body.userId, user.id);
+  }
+
+  @RequirePermissions('project:delete')
   @Delete('admin/projects/:id')
-  delete(@Param('id') id: string) {
-    return this.projectsService.remove(id);
+  remove(@Param('id', new ParseUUIDPipe()) id: string, @CurrentUser() user: SessionUser) {
+    return this.projectsService.remove(id, user.id);
   }
 }

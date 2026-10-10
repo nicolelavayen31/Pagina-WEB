@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { AuthUser, PermissionName } from '@repo/contracts';
 import { AdminUserContext } from '@/components/admin/admin-context';
+import { Avatar, roleLabels } from '@/components/admin/admin-ui';
 import { goToLogin, handleAuthError } from '@/components/admin/use-api';
 import { apiFetch, friendlyMessage } from '@/lib/api';
 
@@ -35,18 +36,12 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
     goToLogin();
   }
 
-  if (error) {
+  if (error || !user) {
     return (
-      <main className="container section">
-        <p className="alert error">{error}</p>
-      </main>
-    );
-  }
-
-  if (!user) {
-    return (
-      <main className="container section" aria-busy="true">
-        <p>Cargando…</p>
+      <main className="admin-center">
+        <div className="admin-card admin-card--narrow">
+          {error ? <p className="alert error">{error}</p> : <p className="hint" aria-busy="true">Cargando…</p>}
+        </div>
       </main>
     );
   }
@@ -54,23 +49,37 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
   return (
     <AdminUserContext.Provider value={user}>
       <div className="admin-shell">
-        <aside className="admin-sidebar">
-          <strong>Panel administrativo</strong>
-          <nav aria-label="Secciones del panel">
+        <aside className="admin-sidebar on-dark">
+          <Link href="/admin/dashboard" className="admin-brand">
+            <span className="brand__mark brand__mark--light" aria-hidden="true">
+              MI
+            </span>
+            <span>
+              <strong>Mantenimientos</strong>
+              <small>Panel administrativo</small>
+            </span>
+          </Link>
+
+          <nav aria-label="Secciones del panel" className="admin-nav">
             {NAV.filter((item) => user.permissions.includes(item.permission)).map((item) => (
               <Link key={item.href} href={item.href} aria-current={pathname.startsWith(item.href) ? 'page' : undefined}>
                 {item.label}
               </Link>
             ))}
           </nav>
-          <p className="hint" style={{ color: 'rgba(255,255,255,0.7)' }}>
-            {user.name}
-            <br />
-            {user.roles.join(', ') || 'Sin rol'}
-          </p>
-          <button type="button" className="button ghost small" style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }} onClick={logout}>
-            Cerrar sesión
-          </button>
+
+          <div className="admin-user">
+            <div className="admin-user__info">
+              <Avatar name={user.name} />
+              <span>
+                <strong>{user.name}</strong>
+                <small>{roleLabels(user.roles)}</small>
+              </span>
+            </div>
+            <button type="button" className="button outline-light small" onClick={logout}>
+              Cerrar sesión
+            </button>
+          </div>
         </aside>
         <main className="admin-main">{children}</main>
       </div>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { Paginated } from '@repo/contracts';
 import { useCan } from '@/components/admin/admin-context';
+import { AdminSection, Avatar, Loading, Pager } from '@/components/admin/admin-ui';
 import { useApi } from '@/components/admin/use-api';
 
 type AdminProject = {
@@ -24,67 +25,58 @@ export default function AdminProjectsPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   return (
-    <>
-      <div className="toolbar">
-        <h1 style={{ margin: 0 }}>Proyectos</h1>
-        {can('project:create') ? (
+    <AdminSection
+      as="h1"
+      title="Proyectos"
+      actions={
+        can('project:create') ? (
           <Link href="/admin/proyectos/nuevo" className="button primary">
             Nuevo proyecto
           </Link>
-        ) : null}
-      </div>
-
+        ) : null
+      }
+    >
       {error ? <p className="alert error">{error}</p> : null}
-      {loading && !data ? <p>Cargando…</p> : null}
+      {loading && !data ? <Loading /> : null}
 
-      {data ? (
-        data.items.length === 0 ? (
-          <p>Todavía no hay proyectos.</p>
-        ) : (
-          <div className="table-wrap">
-            <table className="data">
-              <thead>
-                <tr>
-                  <th scope="col">Título</th>
-                  <th scope="col">Estado</th>
-                  <th scope="col">Autor</th>
-                  <th scope="col">Última modificación</th>
+      {data && data.items.length === 0 ? <p className="hint">Todavía no hay proyectos.</p> : null}
+      {data && data.items.length > 0 ? (
+        <div className="table-wrap">
+          <table className="data">
+            <thead>
+              <tr>
+                <th scope="col">Título</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Autor</th>
+                <th scope="col">Última modificación</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((project) => (
+                <tr key={project.id}>
+                  <td>
+                    <Link href={`/admin/proyectos/${project.id}`} className="table-link">
+                      {project.title}
+                    </Link>
+                  </td>
+                  <td>
+                    <span className={`badge ${project.status}`}>{STATUS_LABEL[project.status]}</span>
+                  </td>
+                  <td>
+                    <span className="cell-user">
+                      <Avatar name={project.creator.name} />
+                      {project.creator.name}
+                    </span>
+                  </td>
+                  <td>{new Date(project.updatedAt).toLocaleString('es')}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {data.items.map((project) => (
-                  <tr key={project.id}>
-                    <td>
-                      <Link href={`/admin/proyectos/${project.id}`} className="underline">
-                        {project.title}
-                      </Link>
-                    </td>
-                    <td>
-                      <span className={`badge ${project.status}`}>{STATUS_LABEL[project.status]}</span>
-                    </td>
-                    <td>{project.creator.name}</td>
-                    <td>{new Date(project.updatedAt).toLocaleString('es')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
 
-      {totalPages > 1 ? (
-        <nav aria-label="Paginación" style={{ display: 'flex', gap: 12, marginTop: 16, alignItems: 'center' }}>
-          <button type="button" className="button ghost small" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-            Anterior
-          </button>
-          <span>
-            Página {page} de {totalPages}
-          </span>
-          <button type="button" className="button ghost small" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-            Siguiente
-          </button>
-        </nav>
-      ) : null}
-    </>
+      <Pager page={page} totalPages={totalPages} onChange={setPage} />
+    </AdminSection>
   );
 }

@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCan } from '@/components/admin/admin-context';
+import { AdminSection } from '@/components/admin/admin-ui';
 import { EMPTY_PROJECT, ProjectForm } from '@/components/admin/project-form';
 import { handleAuthError } from '@/components/admin/use-api';
 import { ApiError, apiFetch, friendlyMessage } from '@/lib/api';
@@ -11,13 +13,24 @@ export default function NewProjectPage() {
   const can = useCan();
 
   if (!can('project:create')) {
-    return <p className="alert error">No tiene permiso para crear proyectos.</p>;
+    return (
+      <AdminSection as="h1" title="Nuevo proyecto">
+        <p className="alert error">No tiene permiso para crear proyectos.</p>
+      </AdminSection>
+    );
   }
 
   return (
-    <>
-      <h1>Nuevo proyecto</h1>
-      <p className="hint">Los proyectos se crean como borrador y no son visibles hasta que se publican.</p>
+    <AdminSection
+      as="h1"
+      title="Nuevo proyecto"
+      description="Los proyectos se crean como borrador y no son visibles hasta que se publican."
+      actions={
+        <Link href="/admin/proyectos" className="button outline">
+          Volver
+        </Link>
+      }
+    >
       <ProjectForm
         initial={EMPTY_PROJECT}
         submitLabel="Crear borrador"
@@ -36,6 +49,6 @@ export default function NewProjectPage() {
           }
         }}
       />
-    </>
+    </AdminSection>
   );
 }

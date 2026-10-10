@@ -47,7 +47,7 @@ function LoginForm() {
         <label htmlFor="login-password">Contraseña</label>
         <input id="login-password" type="password" name="password" autoComplete="current-password" required minLength={8} />
       </div>
-      <button className="button primary" type="submit" disabled={loading}>
+      <button className="button primary button--block" type="submit" disabled={loading}>
         {loading ? 'Verificando…' : 'Iniciar sesión'}
       </button>
       <div aria-live="polite">{error ? <p className="alert error" role="alert">{error}</p> : null}</div>
@@ -57,11 +57,17 @@ function LoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <main className="container section" style={{ maxWidth: 480 }}>
-      <h1>Acceso administrativo</h1>
-      <Suspense>
-        <LoginForm />
-      </Suspense>
+    <main className="admin-center">
+      <div className="admin-card admin-card--narrow admin-login">
+        <span className="brand__mark" aria-hidden="true">
+          MI
+        </span>
+        <h1>Acceso administrativo</h1>
+        <p className="hint">Mantenimientos Integrales y Construcciones</p>
+        <Suspense>
+          <LoginForm />
+        </Suspense>
+      </div>
     </main>
   );
 }

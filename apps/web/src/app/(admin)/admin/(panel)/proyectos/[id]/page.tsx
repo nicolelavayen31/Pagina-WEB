@@ -1,9 +1,11 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { useCan } from '@/components/admin/admin-context';
+import { AdminSection, Loading, Notice } from '@/components/admin/admin-ui';
 import { ProjectForm, type ProjectFields } from '@/components/admin/project-form';
 import { mutate, useApi } from '@/components/admin/use-api';
 import { mediaUrl } from '@/lib/api';
@@ -63,19 +65,50 @@ export default function EditProjectPage() {
     else router.push('/admin/proyectos');
   }
 
-  if (loading && !project) return <p>Cargando…</p>;
+  if (loading && !project) return <Loading />;
   if (error) return <p className="alert error">{error}</p>;
   if (!project) return null;
 
-  return (
+  const actions = (
     <>
-      <p>
+      {can('project:publish') && project.status !== 'PUBLISHED' ? (
+        <button type="button" className="button primary small" disabled={busy}
+          onClick={() => run(`/admin/projects/${id}/publish`, { method: 'POST' }, 'Proyecto publicado.')}>
+          Publicar
+        </button>
+      ) : null}
+      {can('project:unpublish') && project.status === 'PUBLISHED' ? (
+        <button type="button" className="button outline small" disabled={busy}
+          onClick={() => run(`/admin/projects/${id}/unpublish`, { method: 'POST' }, 'Proyecto despublicado.')}>
+          Despublicar
+        </button>
+      ) : null}
+      {can('project:archive') && project.status !== 'ARCHIVED' ? (
+        <button type="button" className="button outline small" disabled={busy}
+          onClick={() => run(`/admin/projects/${id}/archive`, { method: 'POST' }, 'Proyecto archivado.')}>
+          Archivar
+        </button>
+      ) : null}
+      {can('project:delete') ? (
+        <button type="button" className="button danger small" disabled={busy} onClick={remove}>
+          Eliminar
+        </button>
+      ) : null}
+    </>
+  );
+
+  return (
+    <div className="page-stack">
+      <p className="admin-back">
         <Link href="/admin/proyectos">← Proyectos</Link>
       </p>
-      <div className="toolbar">
-        <div>
-          <h1 style={{ margin: 0 }}>{project.title}</h1>
-          <p className="hint" style={{ margin: '4px 0 0' }}>
+
+      <AdminSection
+        as="h1"
+        title={project.title}
+        actions={actions}
+        description={
+          <>
             <span className={`badge ${project.status}`} data-testid="project-status">
               {STATUS_LABEL[project.status]}
             </span>{' '}
@@ -83,79 +116,52 @@ export default function EditProjectPage() {
             {project.status === 'PUBLISHED' ? (
               <>
                 {' · '}
-                <Link className="underline" href={`/proyectos/${project.slug}`} target="_blank">
+                <Link className="table-link" href={`/proyectos/${project.slug}`} target="_blank">
                   Ver en el sitio
                 </Link>
               </>
             ) : null}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {can('project:publish') && project.status !== 'PUBLISHED' ? (
-            <button type="button" className="button primary small" disabled={busy}
-              onClick={() => run(`/admin/projects/${id}/publish`, { method: 'POST' }, 'Proyecto publicado.')}>
-              Publicar
-            </button>
-          ) : null}
-          {can('project:unpublish') && project.status === 'PUBLISHED' ? (
-            <button type="button" className="button ghost small" disabled={busy}
-              onClick={() => run(`/admin/projects/${id}/unpublish`, { method: 'POST' }, 'Proyecto despublicado.')}>
-              Despublicar
-            </button>
-          ) : null}
-          {can('project:archive') && project.status !== 'ARCHIVED' ? (
-            <button type="button" className="button ghost small" disabled={busy}
-              onClick={() => run(`/admin/projects/${id}/archive`, { method: 'POST' }, 'Proyecto archivado.')}>
-              Archivar
-            </button>
-          ) : null}
-          {can('project:delete') ? (
-            <button type="button" className="button danger small" disabled={busy} onClick={remove}>
-              Eliminar
-            </button>
-          ) : null}
-        </div>
-      </div>
+          </>
+        }
+      >
+        <Notice notice={notice} />
+        {!can('project:publish') && project.status !== 'PUBLISHED' ? (
+          <p className="hint">La publicación la realiza un administrador.</p>
+        ) : null}
 
-      <div aria-live="polite">
-        {notice ? <p className={`alert ${notice.kind}`} role="status">{notice.text}</p> : null}
-      </div>
+        {can('project:update') ? (
+          <ProjectForm
+            key={project.id}
+            initial={{
+              title: project.title,
+              slug: project.slug,
+              summary: project.summary,
+              description: project.description,
+              category: project.category,
+              location: project.location,
+            }}
+            submitLabel="Guardar cambios"
+            onSubmit={(fields) => run(`/admin/projects/${id}`, { method: 'PATCH', body: JSON.stringify(fields) }, 'Cambios guardados.')}
+          />
+        ) : null}
+      </AdminSection>
 
-      {!can('project:publish') && project.status !== 'PUBLISHED' ? (
-        <p className="hint">La publicación la realiza un administrador.</p>
-      ) : null}
-
-      {can('project:update') ? (
-        <ProjectForm
-          key={project.id}
-          initial={{
-            title: project.title,
-            slug: project.slug,
-            summary: project.summary,
-            description: project.description,
-            category: project.category,
-            location: project.location,
-          }}
-          submitLabel="Guardar cambios"
-          onSubmit={(fields) => run(`/admin/projects/${id}`, { method: 'PATCH', body: JSON.stringify(fields) }, 'Cambios guardados.')}
-        />
-      ) : null}
-
-      <section style={{ marginTop: 32 }} aria-labelledby="imagenes-titulo">
-        <h2 id="imagenes-titulo">Imágenes</h2>
-        {project.images.length === 0 ? <p>Sin imágenes.</p> : null}
+      <AdminSection title="Imágenes">
+        {project.images.length === 0 ? <p className="hint">Sin imágenes.</p> : null}
         <div className="thumbs">
           {project.images.map((image) => (
             <figure key={image.id}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- private image served by the API */}
-              <img src={mediaUrl(image.id)} alt={image.altText ?? ''} />
+              <div className="thumbs__media">
+                {/* Private image served by the API with the session cookie; not re-optimised by Next. */}
+                <Image src={mediaUrl(image.id)} alt={image.altText ?? ''} fill unoptimized sizes="200px" />
+                {project.coverImageId === image.id ? <span className="tag thumbs__tag">Portada</span> : null}
+              </div>
               <figcaption>
-                <span>
+                <span className="hint">
                   {image.width}×{image.height}
-                  {project.coverImageId === image.id ? ' · Portada' : ''}
                 </span>
                 {can('project:update') && project.coverImageId !== image.id ? (
-                  <button type="button" className="button ghost small" disabled={busy}
+                  <button type="button" className="button outline small" disabled={busy}
                     onClick={() => run(`/admin/projects/${id}`, { method: 'PATCH', body: JSON.stringify({ coverImageId: image.id }) }, 'Portada actualizada.')}>
                     Usar como portada
                   </button>
@@ -172,7 +178,7 @@ export default function EditProjectPage() {
         </div>
 
         {can('media:upload') ? (
-          <form onSubmit={upload} className="card" style={{ padding: 24, marginTop: 16 }}>
+          <form onSubmit={upload} className="form-grid upload-form">
             <div>
               <label htmlFor="image-file">Nueva imagen (JPEG, PNG o WebP, máx. {MAX_UPLOAD_MB} MB)</label>
               <input id="image-file" type="file" name="file" accept="image/jpeg,image/png,image/webp" required />
@@ -181,12 +187,14 @@ export default function EditProjectPage() {
               <label htmlFor="image-alt">Texto alternativo</label>
               <input id="image-alt" name="altText" maxLength={200} placeholder="Describe la imagen para personas con lector de pantalla" />
             </div>
-            <button className="button primary" type="submit" disabled={busy}>
-              Subir imagen
-            </button>
+            <div className="field--full form-actions">
+              <button className="button primary" type="submit" disabled={busy}>
+                Subir imagen
+              </button>
+            </div>
           </form>
         ) : null}
-      </section>
-    </>
+      </AdminSection>
+    </div>
   );
 }

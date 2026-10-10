@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { BUDGET_RANGE_LABELS, LEAD_STATUSES, type BudgetRange, type LeadStatusName, type Paginated } from '@repo/contracts';
 import { useCan } from '@/components/admin/admin-context';
+import { AdminSection, Avatar, Loading, Pager } from '@/components/admin/admin-ui';
 import { mutate, useApi } from '@/components/admin/use-api';
 
 type Lead = {
@@ -35,7 +36,13 @@ export default function LeadsPage() {
   const { data, error, loading, reload } = useApi<Paginated<Lead>>(can('lead:read') ? query : null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  if (!can('lead:read')) return <p className="alert error">No tiene permiso para ver las cotizaciones.</p>;
+  if (!can('lead:read')) {
+    return (
+      <AdminSection as="h1" title="Solicitudes de cotización">
+        <p className="alert error">No tiene permiso para ver las cotizaciones.</p>
+      </AdminSection>
+    );
+  }
 
   async function changeStatus(id: string, next: LeadStatusName) {
     const failure = await mutate(`/admin/leads/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: next }) });
@@ -46,62 +53,84 @@ export default function LeadsPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   return (
-    <>
-      <div className="toolbar">
-        <h1 style={{ margin: 0 }}>Solicitudes de cotización</h1>
-        <div>
-          <label htmlFor="lead-filter" className="sr-only">Filtrar por estado</label>
-          <select id="lead-filter" value={status} onChange={(e) => { setPage(1); setStatus(e.target.value as LeadStatusName | ''); }}>
-            <option value="">Todos los estados</option>
+    <AdminSection
+      as="h1"
+      title="Solicitudes de cotización"
+      actions={
+        <div className="inline-field">
+          <label htmlFor="lead-filter">Estado</label>
+          <select
+            id="lead-filter"
+            value={status}
+            onChange={(e) => {
+              setPage(1);
+              setStatus(e.target.value as LeadStatusName | '');
+            }}
+          >
+            <option value="">Todos</option>
             {LEAD_STATUSES.map((value) => (
-              <option key={value} value={value}>{STATUS_LABEL[value]}</option>
+              <option key={value} value={value}>
+                {STATUS_LABEL[value]}
+              </option>
             ))}
           </select>
         </div>
-      </div>
-
+      }
+    >
       {notice ? <p className="alert error" role="alert">{notice}</p> : null}
       {error ? <p className="alert error">{error}</p> : null}
-      {loading && !data ? <p>Cargando…</p> : null}
+      {loading && !data ? <Loading /> : null}
 
-      {data && data.items.length === 0 ? <p>No hay solicitudes.</p> : null}
+      {data && data.items.length === 0 ? <p className="hint">No hay solicitudes.</p> : null}
       {data && data.items.length > 0 ? (
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
-                <th scope="col">Fecha</th>
                 <th scope="col">Contacto</th>
                 <th scope="col">Necesidad</th>
+                <th scope="col">Fecha</th>
                 <th scope="col">Estado</th>
               </tr>
             </thead>
             <tbody>
               {data.items.map((lead) => (
                 <tr key={lead.id}>
-                  <td>{new Date(lead.createdAt).toLocaleString('es')}</td>
                   <td>
-                    <strong>{lead.name}</strong>
-                    {lead.company ? <> · {lead.company}</> : null}
-                    <br />
-                    {lead.email}
-                    <br />
-                    {lead.phone}
+                    <span className="cell-user">
+                      <Avatar name={lead.name} />
+                      <span>
+                        <strong>{lead.name}</strong>
+                        {lead.company ? <small>{lead.company}</small> : null}
+                        <small>{lead.email}</small>
+                        <small>{lead.phone}</small>
+                      </span>
+                    </span>
                   </td>
-                  <td style={{ maxWidth: 420 }}>
+                  <td className="cell-wide">
                     <span className="hint">
                       {lead.service?.name ?? 'Sin servicio'} · {lead.location}
                       {lead.budgetRange ? ` · ${BUDGET_RANGE_LABELS[lead.budgetRange]}` : ''}
                     </span>
-                    <p style={{ margin: '4px 0 0', whiteSpace: 'pre-line' }}>{lead.description}</p>
+                    <p className="cell-text">{lead.description}</p>
                   </td>
+                  <td>{new Date(lead.createdAt).toLocaleString('es')}</td>
                   <td>
                     {can('lead:update_status') ? (
                       <>
-                        <label htmlFor={`status-${lead.id}`} className="sr-only">Estado de la solicitud de {lead.name}</label>
-                        <select id={`status-${lead.id}`} value={lead.status} onChange={(e) => changeStatus(lead.id, e.target.value as LeadStatusName)}>
+                        <label htmlFor={`status-${lead.id}`} className="sr-only">
+                          Estado de la solicitud de {lead.name}
+                        </label>
+                        <select
+                          id={`status-${lead.id}`}
+                          className="select-compact"
+                          value={lead.status}
+                          onChange={(e) => changeStatus(lead.id, e.target.value as LeadStatusName)}
+                        >
                           {LEAD_STATUSES.map((value) => (
-                            <option key={value} value={value}>{STATUS_LABEL[value]}</option>
+                            <option key={value} value={value}>
+                              {STATUS_LABEL[value]}
+                            </option>
                           ))}
                         </select>
                       </>
@@ -116,13 +145,7 @@ export default function LeadsPage() {
         </div>
       ) : null}
 
-      {totalPages > 1 ? (
-        <nav aria-label="Paginación" style={{ display: 'flex', gap: 12, marginTop: 16, alignItems: 'center' }}>
-          <button type="button" className="button ghost small" disabled={page <= 1} onClick={() => setPage(page - 1)}>Anterior</button>
-          <span>Página {page} de {totalPages}</span>
-          <button type="button" className="button ghost small" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Siguiente</button>
-        </nav>
-      ) : null}
-    </>
+      <Pager page={page} totalPages={totalPages} onChange={setPage} />
+    </AdminSection>
   );
 }

@@ -53,7 +53,7 @@ export function ProjectForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card" style={{ padding: 24 }}>
+    <form onSubmit={handleSubmit} className="form-grid">
       <div>
         <label htmlFor="project-title">Título</label>
         <input id="project-title" value={fields.title} onChange={(e) => update('title', e.target.value)} required minLength={3} maxLength={160} />
@@ -71,24 +71,25 @@ export function ProjectForm({
           pattern="[a-z0-9]+(-[a-z0-9]+)*"
           minLength={3}
           maxLength={120}
+          aria-describedby="project-slug-hint"
         />
-        <p className="hint">Solo minúsculas, números y guiones.</p>
-      </div>
-      <div className="split even">
-        <div>
-          <label htmlFor="project-category">Categoría</label>
-          <input id="project-category" value={fields.category} onChange={(e) => update('category', e.target.value)} required minLength={2} maxLength={80} />
-        </div>
-        <div>
-          <label htmlFor="project-location">Ubicación</label>
-          <input id="project-location" value={fields.location} onChange={(e) => update('location', e.target.value)} required minLength={2} maxLength={160} />
-        </div>
+        <p className="hint" id="project-slug-hint">
+          Solo minúsculas, números y guiones.
+        </p>
       </div>
       <div>
+        <label htmlFor="project-category">Categoría</label>
+        <input id="project-category" value={fields.category} onChange={(e) => update('category', e.target.value)} required minLength={2} maxLength={80} />
+      </div>
+      <div>
+        <label htmlFor="project-location">Ubicación</label>
+        <input id="project-location" value={fields.location} onChange={(e) => update('location', e.target.value)} required minLength={2} maxLength={160} />
+      </div>
+      <div className="field--full">
         <label htmlFor="project-summary">Resumen</label>
         <textarea id="project-summary" rows={2} value={fields.summary} onChange={(e) => update('summary', e.target.value)} required minLength={20} maxLength={240} />
       </div>
-      <div>
+      <div className="field--full">
         <label htmlFor="project-description">Descripción</label>
         <textarea
           id="project-description"
@@ -98,13 +99,22 @@ export function ProjectForm({
           required
           minLength={80}
           maxLength={5000}
+          aria-describedby="project-description-hint"
         />
-        <p className="hint">Texto plano (mínimo 80 caracteres). Separe párrafos con una línea en blanco; el HTML no se interpreta.</p>
+        <p className="hint" id="project-description-hint">
+          Texto plano (mínimo 80 caracteres). Separe párrafos con una línea en blanco; el HTML no se interpreta.
+        </p>
       </div>
-      <button className="button primary" type="submit" disabled={saving}>
-        {saving ? 'Guardando…' : submitLabel}
-      </button>
-      {error ? <p className="alert error" role="alert">{error}</p> : null}
+      <div className="field--full form-actions">
+        <button className="button primary" type="submit" disabled={saving}>
+          {saving ? 'Guardando…' : submitLabel}
+        </button>
+      </div>
+      {error ? (
+        <p className="alert error field--full" role="alert">
+          {error}
+        </p>
+      ) : null}
     </form>
   );
 }

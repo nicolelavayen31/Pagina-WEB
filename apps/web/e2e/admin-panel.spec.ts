@@ -107,6 +107,21 @@ test.describe('Admin panel', () => {
     expect(forced.status()).toBe(403);
   });
 
+  test('users screen: active menu pill, initials avatar, green status and two-column form', async ({ page }) => {
+    await loginViaUi(page, ADMIN);
+    const nav = page.getByRole('navigation', { name: 'Secciones del panel' });
+    await nav.getByRole('link', { name: 'Usuarios' }).click();
+    await expect(nav.getByRole('link', { name: 'Usuarios' })).toHaveAttribute('aria-current', 'page');
+
+    const row = page.getByRole('row').filter({ hasText: ADMIN.email });
+    await expect(row.locator('.avatar')).toHaveText('AE'); // "Admin E2E"
+    await expect(row.getByText('Activo')).toBeVisible();
+
+    const name = await page.getByLabel('Nombre', { exact: true }).boundingBox();
+    const email = await page.getByLabel('Correo electrónico').boundingBox();
+    expect(Math.abs(name!.y - email!.y)).toBeLessThan(2);
+  });
+
   test('logout ends the session on the server', async ({ page }) => {
     await loginViaUi(page, ADMIN);
     await page.getByRole('button', { name: 'Cerrar sesión' }).click();

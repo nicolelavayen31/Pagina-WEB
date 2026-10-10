@@ -1,0 +1,30 @@
+node_modules
+.next
+out
+coverage
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment files (only the examples are versioned)
+.env
+.env.*
+!.env.example
+
+*.tsbuildinfo
+apps/api/dist
+apps/api/generated
+packages/contracts/dist
+apps/web/.next
+apps/web/out
+
+# Uploaded files and local storage
+uploads/
+apps/api/uploads/
+
+# Test artifacts
+test-results/
+playwright-report/
+apps/web/test-results/
+apps/web/playwright-report/
+
+.DS_Store

@@ -1,29 +1,43 @@
-version: '3.9'
+# Optional local infrastructure. Not required on this machine: PostgreSQL 18 runs natively.
+# If you use it, stop the native service first (both listen on 5432) and set
+# POSTGRES_PASSWORD in a root .env file (never committed).
+#
+#   docker compose up -d postgres            # database only
+#   docker compose --profile redis up -d     # database + Redis (not used by the code yet)
 
 services:
   postgres:
-    image: postgres:17
+    image: postgres:18
     environment:
-      POSTGRES_DB: mantenimientos_integrales
-      POSTGRES_USER: app_user
-      POSTGRES_PASSWORD: app_password
+      POSTGRES_DB: ${POSTGRES_DB:-mantenimientos_integrales}
+      POSTGRES_USER: ${POSTGRES_USER:-app_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5432:5432'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # PostgreSQL 18 images keep data under /var/lib/postgresql/<major>/docker.
+      - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U app_user -d mantenimientos_integrales']
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   redis:
     image: redis:7.4
-    ports:
-      - '6379:6379'
+    profiles: ['redis']
     command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '127.0.0.1:6379:6379'
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
 volumes:
   postgres_data:

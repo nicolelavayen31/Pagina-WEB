@@ -4,7 +4,10 @@ import { WhatsAppButton } from '@/components/whatsapp-button';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
-  title: 'Mantenimientos Integrales y Construcciones',
+  title: {
+    default: 'Mantenimientos Integrales y Construcciones',
+    template: '%s | Mantenimientos Integrales y Construcciones',
+  },
   description: 'Plataforma corporativa para mantenimientos, construcciones y proyectos integrales.',
   robots: { index: true, follow: true },
 };

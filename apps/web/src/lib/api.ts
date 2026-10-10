@@ -1,49 +1,84 @@
-export type ProjectItem = {
-  id: string;
-  title: string;
-  slug: string;
-  summary: string;
-  description: string;
-  category: string;
-  location: string;
-  status: string;
-  coverImageId?: string | null;
-  publishedAt?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  images?: Array<{ id: string; storageKey: string; altText?: string | null; caption?: string | null; sortOrder: number }>;
-};
+import type { Paginated, PublicProject, PublicService } from '@repo/contracts';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+export type { PublicProject, PublicService };
 
-async function handle<T>(url: string): Promise<T> {
-  const response = await fetch(`${API_URL}${url}`, {
-    cache: 'no-store',
-    headers: { 'Content-Type': 'application/json' },
-  });
-
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+/**
+ * Server components call the API directly; the browser goes through the Next.js rewrite
+ * (`/api/*`), so cookies stay first-party and no CORS is involved.
+ */
+function apiBase(): string {
+  if (typeof window === 'undefined') {
+    return `${(process.env.API_INTERNAL_URL || 'http://127.0.0.1:3001').replace(/\/$/, '')}/api/v1`;
   }
-
-  return response.json() as Promise<T>;
+  return '/api/v1';
 }
 
-export const getPublicServices = () => handle<Array<{ id: string; name: string; slug: string; summary: string }>>('/services');
-export const getPublicProjects = () => handle<ProjectItem[]>('/projects');
-export const getPublicProjectBySlug = (slug: string) => handle<ProjectItem>(`/projects/${slug}`);
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+    readonly fieldErrors: Array<{ path: string; message: string }> = [],
+  ) {
+    super(message);
+  }
+}
 
-export const createLead = async (payload: Record<string, unknown>) => {
-  const response = await fetch(`${API_URL}/leads`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+/** Messages shown to visitors never echo raw backend errors. */
+export function friendlyMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    switch (error.status) {
+      case 400:
+        return 'Revise los datos del formulario e inténtelo de nuevo.';
+      case 401:
+        return 'Su sesión no es válida o ha expirado.';
+      case 403:
+        return 'No tiene permiso para realizar esta acción.';
+      case 404:
+        return 'El recurso solicitado no existe.';
+      case 409:
+        return 'Ya existe un registro con esos datos.';
+      case 413:
+        return 'El archivo supera el tamaño máximo permitido.';
+      case 415:
+        return 'Formato de archivo no permitido. Use JPEG, PNG o WebP.';
+      case 429:
+        return 'Ha realizado demasiadas solicitudes. Espere un minuto e inténtelo de nuevo.';
+      default:
+        return 'Ha ocurrido un error inesperado. Inténtelo más tarde.';
+    }
+  }
+  return 'No se pudo conectar con el servidor. Inténtelo más tarde.';
+}
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Unable to submit lead' }));
-    throw new Error(error.message || 'Unable to submit lead');
+export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
   }
 
-  return response.json();
-};
+  const response = await fetch(`${apiBase()}${path}`, { cache: 'no-store', ...init, headers });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { message?: unknown; errors?: unknown };
+    throw new ApiError(
+      response.status,
+      typeof body.message === 'string' ? body.message : `HTTP ${response.status}`,
+      Array.isArray(body.errors) ? (body.errors as Array<{ path: string; message: string }>) : [],
+    );
+  }
+
+  return (response.status === 204 ? undefined : await response.json()) as T;
+}
+
+export const mediaUrl = (imageId: string) => `/api/v1/media/${imageId}`;
+
+export const getPublicServices = () => apiFetch<PublicService[]>('/services');
+
+export const getPublicProjects = (page = 1, pageSize = 12) =>
+  apiFetch<Paginated<PublicProject>>(`/projects?page=${page}&pageSize=${pageSize}`);
+
+export const getPublicProjectBySlug = (slug: string) =>
+  apiFetch<PublicProject>(`/projects/${encodeURIComponent(slug)}`);
+
+export const createLead = (payload: Record<string, unknown>) =>
+  apiFetch<{ success: boolean }>('/leads', { method: 'POST', body: JSON.stringify(payload) });

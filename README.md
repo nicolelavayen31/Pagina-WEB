@@ -1,44 +1,69 @@
 # Mantenimientos Integrales y Construcciones
 
-This repository contains the first production-oriented monorepo skeleton for a public corporate website and a private administrative panel for a construction and maintenance company.
+Sitio web corporativo público y panel administrativo privado para una empresa de construcción y mantenimiento.
 
-## Stack
+## Stack (versiones instaladas)
 
-- Node.js 24 LTS
-- Next.js 16.4.0
-- React 19.3.0
-- Tailwind CSS 4.3.3
-- NestJS 11.x
-- Prisma 7.10.0
-- PostgreSQL 17
-- Redis 7.4
-- pnpm 10.15.0
+| Componente | Versión |
+|---|---|
+| Node.js | 24 (probado con 24.15) |
+| pnpm | 10.15.0 (vía Corepack: `corepack pnpm …`) |
+| Next.js / React | 16.4.0 / 19.3.0 |
+| Tailwind CSS | 4 (solo tema y utilidades, sin *preflight*) |
+| NestJS | 11 |
+| Prisma (CLI y Client) | 6.19.3 |
+| Zod | 4.6.5 |
+| PostgreSQL | 18 |
+| Redis | No usado todavía (opcional, ver `docker-compose.yml`) |
 
-## Version decisions
+## Estructura
 
-The original brief requested Prisma 7.x and NestJS 11.x as the target line. The registry currently exposes stable Prisma 7.10.0 and NestJS 11.x packages, so this project pins to those stable releases. Corporate and legal content in the public copy is intentionally kept generic and marked for final review.
+- `apps/web` — sitio público y panel administrativo (Next.js). El navegador solo habla con Next; `/api/*` se reenvía a la API.
+- `apps/api` — API NestJS, esquema y migraciones Prisma, seed.
+- `packages/contracts` — esquemas Zod, permisos por rol y tipos compartidos.
+- `docs/` — arquitectura, reglas de negocio, seguridad y despliegue.
 
-## Quick start
+## Puesta en marcha local (Windows, sin Docker)
 
-1. Install dependencies with pnpm.
-2. Copy `.env.example` to `.env` and set the required values.
-3. Start PostgreSQL and Redis using Docker Compose.
-4. Run `pnpm db:generate` and `pnpm db:migrate`.
-5. Run `pnpm dev` to start the web and API workspaces.
+Requisitos: Node 24, PostgreSQL 18 en ejecución y una base de datos creada.
 
-## Structure
+```powershell
+corepack pnpm install
+copy apps\api\.env.example apps\api\.env        # completar DATABASE_URL, ADMIN_EMAIL, ADMIN_PASSWORD
+copy apps\web\.env.example apps\web\.env.local
+corepack pnpm db:generate
+corepack pnpm db:deploy                          # aplica las migraciones versionadas
+corepack pnpm db:seed                            # roles, permisos, servicios iniciales y primer admin
+corepack pnpm dev                                # web en :3000, API en :3001
+```
 
-- `apps/web` — public website and private admin UI
-- `apps/api` — NestJS API and Prisma schema
-- `packages/contracts` — shared Zod validation schema and public DTOs
+Panel: http://localhost:3000/admin. Después del primer seed, elimine `ADMIN_PASSWORD` de `apps/api/.env`.
 
-## Security notes
+> El seed es idempotente: no sobrescribe contraseñas existentes ni servicios editados desde el panel.
 
-- No default passwords are committed.
-- Administrative access is restricted to authenticated backend checks.
-- Public endpoints only expose published content and do not leak admin data.
-- File uploads are validated before storage.
+## Comandos de verificación
 
-## Deployment
+| Comando | Qué hace | Requiere |
+|---|---|---|
+| `corepack pnpm lint` | ESLint (API y web), 0 avisos permitidos | — |
+| `corepack pnpm typecheck` | TypeScript en los 3 paquetes | — |
+| `corepack pnpm test` | Pruebas unitarias de la API (sin BD) | — |
+| `corepack pnpm test:int` | Pruebas de integración contra PostgreSQL real | BD `*_test` |
+| `corepack pnpm test:e2e` | Playwright: compila API y web y las prueba en :3101/:3100 | BD `*_test`, Chromium |
+| `corepack pnpm build` | Build de producción de los 3 paquetes | — |
 
-Use Docker or a managed hosting environment with HTTPS, a reverse proxy, Redis, PostgreSQL, and private object storage. Detailed production deployment and rollback steps are documented in the `docs` folder.
+### Base de datos de pruebas
+
+Las pruebas de integración y E2E **se niegan a ejecutarse** si el nombre de la base de datos no termina en `_test`.
+Cree `apps/api/.env.test` (no se versiona) con:
+
+```
+DATABASE_URL="postgresql://USUARIO:CLAVE@localhost:5432/mantenimiento_db_test?schema=public"
+```
+
+Las suites vacían esa base en cada ejecución.
+
+## Producción
+
+`node apps/api/dist/main.js` y `next start`. La API **no arranca** en producción sin `TURNSTILE_SECRET_KEY`.
+Consulte [docs/deployment.md](docs/deployment.md) y [docs/security.md](docs/security.md).

@@ -16,15 +16,16 @@ export function assertTestDatabase(url: string | undefined = process.env.DATABAS
 }
 
 /**
- * Loads apps/api/.env.test (local) unless the variables are already provided (CI),
- * then forces the test-only settings.
+ * Loads apps/api/.env.test when present (local runs) and lets it override anything already
+ * loaded: @prisma/client reads apps/api/.env on import, which would otherwise point at the
+ * development database. In CI there is no file and DATABASE_URL comes from the environment.
  */
 export function loadTestEnv(): void {
   const envFile = path.join(API_ROOT, '.env.test');
   if (existsSync(envFile)) {
     for (const line of readFileSync(envFile, 'utf8').split(/\r?\n/)) {
       const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*"?(.*?)"?\s*$/);
-      if (match && process.env[match[1]] === undefined) {
+      if (match) {
         process.env[match[1]] = match[2];
       }
     }

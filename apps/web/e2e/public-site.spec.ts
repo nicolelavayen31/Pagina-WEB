@@ -77,6 +77,33 @@ test.describe('Public site', () => {
     expect(dialogOpened).toBe(false);
   });
 
+  test('projects catalogue filters by real categories and shows the data row', async ({ page, request }) => {
+    const suffix = Date.now().toString(36);
+    const electric = `Eléctrico ${suffix}`;
+    const painting = `Pintura ${suffix}`;
+    await createProject(request, { slug: uniqueSlug('cat-a'), title: `Tablero ${suffix}`, category: electric, location: 'Cuenca' });
+    await createProject(request, { slug: uniqueSlug('cat-b'), title: `Fachada ${suffix}`, category: painting, location: 'Loja' });
+
+    await page.goto('/proyectos');
+    await expect(page.getByRole('heading', { level: 1, name: 'Obras que hablan por nosotros' })).toBeVisible();
+    const filters = page.getByRole('navigation', { name: 'Filtrar por categoría' });
+    await expect(filters.getByRole('link', { name: 'Todos' })).toHaveAttribute('aria-current', 'page');
+
+    await filters.getByRole('link', { name: electric }).click();
+    await expect(page).toHaveURL(/categoria=/);
+    await expect(filters.getByRole('link', { name: electric })).toHaveAttribute('aria-current', 'page');
+
+    const card = page.getByRole('article').filter({ hasText: `Tablero ${suffix}` });
+    await expect(card).toBeVisible();
+    await expect(card.getByText(electric)).toBeVisible();
+    await expect(card.getByText('Cuenca')).toBeVisible();
+    await expect(card.getByText(String(new Date().getFullYear()))).toBeVisible();
+    await expect(page.getByRole('article').filter({ hasText: `Fachada ${suffix}` })).toHaveCount(0);
+
+    await card.getByRole('link', { name: `Tablero ${suffix}` }).click();
+    await expect(page.getByRole('heading', { level: 1, name: `Tablero ${suffix}` })).toBeVisible();
+  });
+
   test('drafts are not visible on the public site', async ({ page, request }) => {
     const draft = await createProject(request, { slug: uniqueSlug('borrador'), title: 'Borrador secreto' }, false);
     const response = await page.goto(`/proyectos/${draft.slug}`);

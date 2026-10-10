@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { CtaBand } from '@/components/cta-band';
 import { PlainText } from '@/components/plain-text';
 import { ApiError, getPublicProjectBySlug, mediaUrl } from '@/lib/api';
 
@@ -30,42 +32,58 @@ export default async function ProjectDetailPage({ params }: Props) {
   const project = await loadProject(slug);
   const cover = project.images.find((image) => image.id === project.coverImageId) ?? project.images[0];
   const gallery = project.images.filter((image) => image.id !== cover?.id);
+  const year = project.publishedAt ? new Date(project.publishedAt).getFullYear() : null;
 
   return (
-    <main className="container section">
-      <Link href="/proyectos">← Volver a proyectos</Link>
-      <p style={{ color: 'var(--primary)', fontWeight: 700, marginBottom: 0 }}>
-        {project.category} · {project.location}
-      </p>
-      <h1>{project.title}</h1>
-      <p>{project.summary}</p>
+    <main className="page-stack">
+      <section className="page-hero on-dark" aria-labelledby="proyecto-titulo">
+        <Link href="/proyectos" className="page-hero__back">
+          ← Volver a proyectos
+        </Link>
+        <p className="eyebrow page-hero__eyebrow">
+          {project.category} · {project.location}
+          {year ? ` · ${year}` : ''}
+        </p>
+        <h1 id="proyecto-titulo">{project.title}</h1>
+        <p>{project.summary}</p>
+      </section>
 
-      {cover ? (
-        <figure style={{ margin: '24px 0' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- served by the API with its own cache headers */}
-          <img
-            src={mediaUrl(cover.id)}
-            alt={cover.altText ?? project.title}
-            style={{ width: '100%', maxHeight: 520, objectFit: 'cover', borderRadius: 18 }}
-          />
-          {cover.caption ? <figcaption className="hint">{cover.caption}</figcaption> : null}
-        </figure>
-      ) : null}
+      <section className="surface-section project-detail">
+        {cover ? (
+          <figure className="project-detail__cover">
+            <div className="project-detail__cover-media">
+              {/* Served by the API already optimised; drafts never reach this public page. */}
+              <Image
+                src={mediaUrl(cover.id)}
+                alt={cover.altText ?? project.title}
+                fill
+                unoptimized
+                priority
+                sizes="(max-width: 1200px) 100vw, 1100px"
+              />
+            </div>
+            {cover.caption ? <figcaption className="hint">{cover.caption}</figcaption> : null}
+          </figure>
+        ) : null}
 
-      {/* Plain text rendering: any HTML in the description is displayed, never executed. */}
-      <PlainText text={project.description} className="prose" />
+        {/* Plain text rendering: any HTML in the description is displayed, never executed. */}
+        <PlainText text={project.description} className="prose project-detail__text" />
 
-      {gallery.length > 0 ? (
-        <section aria-label="Galería" className="thumbs" style={{ marginTop: 32 }}>
-          {gallery.map((image) => (
-            <figure key={image.id}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- served by the API with its own cache headers */}
-              <img src={mediaUrl(image.id)} alt={image.altText ?? ''} loading="lazy" />
-              {image.caption ? <figcaption>{image.caption}</figcaption> : null}
-            </figure>
-          ))}
-        </section>
-      ) : null}
+        {gallery.length > 0 ? (
+          <section aria-label="Galería" className="project-gallery">
+            {gallery.map((image) => (
+              <figure key={image.id}>
+                <div className="project-gallery__media">
+                  <Image src={mediaUrl(image.id)} alt={image.altText ?? ''} fill unoptimized sizes="(max-width: 640px) 100vw, 33vw" />
+                </div>
+                {image.caption ? <figcaption className="hint">{image.caption}</figcaption> : null}
+              </figure>
+            ))}
+          </section>
+        ) : null}
+      </section>
+
+      <CtaBand title="¿Tienes un proyecto parecido? Cuéntanos qué necesitas." text="" action="Solicitar cotización" />
     </main>
   );
 }

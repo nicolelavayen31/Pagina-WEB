@@ -56,10 +56,8 @@ export function SiteHeader() {
               </li>
             ))}
           </ul>
+          {/* One primary action; "Proyectos" is already a menu link. */}
           <div className="site-nav__actions">
-            <Link href="/proyectos" className="button secondary" onClick={close}>
-              Ver proyectos
-            </Link>
             <Link href="/contacto#cotizar" className="button primary" onClick={close}>
               Solicitar cotización
             </Link>

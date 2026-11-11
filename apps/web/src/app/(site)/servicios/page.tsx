@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CtaBand } from '@/components/cta-band';
 import { PageHero } from '@/components/page-hero';
-import { ServiceCard } from '@/components/service-card';
-import { getPublicServices } from '@/lib/api';
+import { ServiceCard } from '@/modules/services/components/service-card';
+import { getPublicServices } from '@/modules/services/api';
 
 export const dynamic = 'force-dynamic';
 

@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { envSchema } from '@repo/contracts';
-import { PrismaModule } from './prisma/prisma.module';
+import { PrismaModule } from './common/persistence/prisma.module';
+import { StorageModule } from './common/storage/storage.module';
+import { validateEnv } from './config/validate-env';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
@@ -13,15 +14,6 @@ import { MediaModule } from './modules/media/media.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { ServicesModule } from './modules/services/services.module';
 import { UsersModule } from './modules/users/users.module';
-
-function validateEnv(config: Record<string, unknown>) {
-  const result = envSchema.safeParse(config);
-  if (!result.success) {
-    const issues = result.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
-    throw new Error(`Invalid environment configuration -> ${issues.join('; ')}`);
-  }
-  return result.data;
-}
 
 @Module({
   imports: [
@@ -35,6 +27,7 @@ function validateEnv(config: Record<string, unknown>) {
       throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }],
     }),
     PrismaModule,
+    StorageModule,
     AuditModule,
     AuthModule,
     HealthModule,

@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CtaBand } from '@/components/cta-band';
 import { PageHero } from '@/components/page-hero';
-import { ProjectCard } from '@/components/project-card';
-import { WorkGallery } from '@/components/work-gallery';
-import { getAllPublicProjects } from '@/lib/api';
-import { WORK_GALLERY } from '@/lib/site-photos';
+import { ProjectCard } from '@/modules/projects/components/project-card';
+import { WorkGallery } from '@/modules/projects/components/work-gallery';
+import { getAllPublicProjects } from '@/modules/projects/api';
+import { WORK_GALLERY } from '@/shared/content/site-photos';
 
 export const dynamic = 'force-dynamic';
 

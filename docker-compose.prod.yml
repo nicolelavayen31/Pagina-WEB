@@ -1,0 +1,101 @@
+# Production stack: Caddy (HTTPS) -> web (Next.js) -> api (NestJS) -> postgres.
+# Only Caddy publishes ports. Usage (on the server):
+#   docker compose -f docker-compose.prod.yml --env-file deploy/.env.production up -d --build
+# See deploy/README.md.
+
+x-app-build: &app-build
+  context: .
+  args:
+    NEXT_PUBLIC_APP_URL: https://${SITE_DOMAIN:?Set SITE_DOMAIN}
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:?Set TURNSTILE_SITE_KEY}
+    NEXT_PUBLIC_WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-}
+    NEXT_PUBLIC_CONTACT_PHONE: ${CONTACT_PHONE:-}
+    NEXT_PUBLIC_CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+    NEXT_PUBLIC_CONTACT_ADDRESS: ${CONTACT_ADDRESS:-}
+    NEXT_PUBLIC_CONTACT_HOURS: ${CONTACT_HOURS:-}
+
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?Set POSTGRES_SUPERUSER_PASSWORD}
+      APP_DB_USER: app
+      APP_DB_NAME: mantenimientos
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./deploy/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d mantenimientos']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: *app-build
+    image: pagina-web:latest
+    restart: unless-stopped
+    working_dir: /app/apps/api
+    command: ['node', 'dist/main.js']
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://app:${APP_DB_PASSWORD}@postgres:5432/mantenimientos?schema=public
+      CORS_ORIGIN: https://${SITE_DOMAIN}
+      TRUST_PROXY: 1
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:?Set TURNSTILE_SECRET_KEY}
+      STORAGE_DRIVER: local
+      UPLOAD_DIR: /data/uploads
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      LEAD_NOTIFY_TO: ${LEAD_NOTIFY_TO:-}
+      LEAD_NOTIFY_FROM: ${LEAD_NOTIFY_FROM:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrador}
+    volumes:
+      - uploads:/data/uploads
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3001/api/v1/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  web:
+    image: pagina-web:latest
+    restart: unless-stopped
+    working_dir: /app/apps/web
+    command: ['node', 'node_modules/next/dist/bin/next', 'start', '-p', '3000', '-H', '0.0.0.0']
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      API_INTERNAL_URL: http://api:3001
+
+  caddy:
+    image: caddy:2.10
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  uploads:
+  caddy_data:
+  caddy_config:

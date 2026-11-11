@@ -2,7 +2,7 @@
 
 ## Roles y permisos (mínimo privilegio)
 
-Fuente de verdad: `ROLE_PERMISSIONS` en `packages/contracts/src/index.ts`. El seed sincroniza la BD con esa matriz y
+Fuente de verdad: `ROLE_PERMISSIONS` en `packages/contracts/src/permissions.ts`. El seed sincroniza la BD con esa matriz y
 elimina los permisos obsoletos.
 
 | Permiso | ADMIN | PROJECT_MANAGER |

@@ -1,11 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MulterModule } from '@nestjs/platform-express';
-import type { EnvConfig } from '@repo/contracts';
-import { MediaController } from './media.controller';
-import { MediaService } from './media.service';
-import { LocalStorageService } from './storage/local-storage.service';
-import { StorageService } from './storage/storage.service';
+import type { EnvConfig } from '../../config/env.schema';
+import { ImageProcessor } from './application/ports/image-processor';
+import { ProjectImageRepository } from './application/ports/project-image.repository';
+import { DeleteProjectImageUseCase } from './application/use-cases/delete-project-image.use-case';
+import { GetImageForDeliveryUseCase } from './application/use-cases/get-image-for-delivery.use-case';
+import { UploadProjectImageUseCase } from './application/use-cases/upload-project-image.use-case';
+import { PrismaProjectImageRepository } from './infrastructure/prisma-project-image.repository';
+import { SharpImageProcessor } from './infrastructure/sharp-image-processor';
+import { MediaController } from './presentation/media.controller';
 
 @Module({
   imports: [
@@ -23,7 +27,12 @@ import { StorageService } from './storage/storage.service';
     }),
   ],
   controllers: [MediaController],
-  providers: [MediaService, { provide: StorageService, useClass: LocalStorageService }],
-  exports: [StorageService],
+  providers: [
+    { provide: ProjectImageRepository, useClass: PrismaProjectImageRepository },
+    { provide: ImageProcessor, useClass: SharpImageProcessor },
+    UploadProjectImageUseCase,
+    DeleteProjectImageUseCase,
+    GetImageForDeliveryUseCase,
+  ],
 })
 export class MediaModule {}

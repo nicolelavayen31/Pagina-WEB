@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
+import { ContactDetails } from '@/components/contact-details';
 import { WhatsAppIcon } from '@/components/icons';
-import { QuoteForm } from '@/components/quote-form';
-import { getPublicServices } from '@/lib/api';
-import { whatsappHref } from '@/lib/contact';
+import { QuoteForm } from '@/modules/contact/components/quote-form';
+import { getPublicServices } from '@/modules/services/api';
+import { whatsappHref } from '@/shared/lib/whatsapp';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +43,7 @@ export default async function ContactPage() {
               <WhatsAppIcon />
               Escríbenos por WhatsApp
             </a>
+            <ContactDetails className="contact-details--intro" />
           </div>
         ) : null}
       </section>

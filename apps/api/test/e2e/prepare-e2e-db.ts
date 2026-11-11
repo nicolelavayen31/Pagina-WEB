@@ -6,7 +6,7 @@ import { execSync } from 'child_process';
 import * as path from 'path';
 import * as argon2 from 'argon2';
 import { PrismaClient } from '@prisma/client';
-import { syncRolesAndPermissions } from '../../src/modules/auth/rbac-sync';
+import { syncRolesAndPermissions } from '../../src/modules/auth/infrastructure/rbac-sync';
 import { assertTestDatabase, loadTestEnv } from '../integration/setup/test-env';
 
 export const E2E_USERS = {

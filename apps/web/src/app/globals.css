@@ -140,9 +140,24 @@ img {
 /* ================================================================ layout */
 
 .page-shell {
-  padding: var(--gap-block);
   display: grid;
-  gap: var(--gap-block);
+  min-width: 0;
+}
+
+/* Inner pages: padded column of rounded blocks. The home page (main.home) uses full-width bands. */
+.site-content {
+  min-width: 0;
+}
+
+/* Same width as the header and footer (1240px + the 16px gutters), so edges line up. */
+.site-content > main:not(.home, .container) {
+  width: min(1272px, 100%);
+  margin: 0 auto;
+  padding: var(--gap-block);
+}
+
+.site-content:focus {
+  outline: none;
 }
 
 .page-stack {
@@ -334,26 +349,78 @@ img {
 
 .site-header {
   position: sticky;
-  top: var(--gap-block);
+  top: 0;
   z-index: 40;
+  background: var(--color-surface);
+  box-shadow: 0 1px 0 rgba(11, 23, 48, 0.08), 0 8px 24px rgba(11, 23, 48, 0.06);
+}
+
+/* Thin navy strip above the menu (brand signature: diagonal stripes). */
+.site-topbar {
+  background: var(--color-navy) var(--stripes);
+  color: var(--color-on-dark-muted);
+  font-size: 0.82rem;
+}
+
+.site-topbar__inner {
+  width: min(1240px, calc(100% - 32px));
+  margin: 0 auto;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.site-topbar p {
+  margin: 0;
+}
+
+.site-topbar__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-accent);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.site-topbar__link svg {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.18s ease;
+}
+
+.site-topbar__link:hover svg {
+  transform: translateX(3px);
 }
 
 .site-header__bar {
+  width: min(1240px, calc(100% - 32px));
+  margin: 0 auto;
+  min-height: 76px;
   display: flex;
   align-items: center;
   gap: 16px;
-  background: var(--color-surface);
-  border-radius: var(--radius-pill);
-  padding: 10px 12px 10px 16px;
-  box-shadow: var(--shadow-soft);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-weight: 700;
+  gap: 12px;
+  font-weight: 800;
   white-space: nowrap;
+}
+
+.brand__text {
+  display: grid;
+  line-height: 1.15;
+}
+
+.brand__text small {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
 }
 
 .brand__mark {
@@ -388,22 +455,40 @@ img {
 }
 
 .site-nav ul a {
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: var(--button-height);
   padding: 0 14px;
-  font-weight: 500;
-  border-bottom: 2px solid transparent;
+  font-weight: 600;
+}
+
+/* Underline grows from the centre on hover; stays on the current page. */
+.site-nav ul a::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 4px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  transform: scaleX(0);
+  transition: transform 0.22s ease;
 }
 
 .site-nav ul a:hover {
   color: var(--color-primary);
 }
 
+.site-nav ul a:hover::after,
+.site-nav ul a[aria-current='page']::after {
+  transform: scaleX(1);
+}
+
 .site-nav ul a[aria-current='page'] {
   color: var(--color-primary);
   font-weight: 700;
-  border-bottom-color: var(--color-primary);
 }
 
 .site-nav__actions {
@@ -1347,15 +1432,18 @@ img {
 /* ================================================================ footer */
 
 .site-footer {
-  background: var(--color-navy);
+  margin-top: var(--gap-block);
+  background: var(--color-navy) var(--stripes);
   color: #fff;
-  border-radius: var(--radius-section);
-  padding: 32px var(--section-pad);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  border-top: 4px solid var(--color-accent);
+}
+
+.site-footer__inner {
+  width: min(1240px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: clamp(40px, 6vw, 64px) 0 24px;
+  display: grid;
+  gap: 40px;
 }
 
 .site-footer p {
@@ -1364,21 +1452,105 @@ img {
   font-size: 0.9rem;
 }
 
-.site-footer nav {
+.site-footer__top {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 20px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.site-footer nav a {
+.site-footer__brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 560px;
+}
+
+.site-footer__brand .brand__mark {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  background: var(--color-accent);
+  color: var(--color-navy);
+  font-size: 1rem;
+}
+
+.site-footer__brand strong {
+  font-size: 1.1rem;
+}
+
+.site-footer__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  border-bottom: 2px solid var(--color-accent);
+  padding-bottom: 4px;
+}
+
+.site-footer__cta svg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-accent);
+  transition: transform 0.18s ease;
+}
+
+.site-footer__cta:hover svg {
+  transform: translateX(4px);
+}
+
+.site-footer__columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.3fr);
+  gap: 24px;
+}
+
+.site-footer__columns h2 {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.site-footer__columns ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.site-footer a:not(.site-footer__cta) {
   color: var(--color-on-dark-muted);
-  min-height: var(--button-height);
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
 }
 
-.site-footer nav a:hover {
+.site-footer a:not(.site-footer__cta):hover {
   color: #fff;
+}
+
+.site-footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.site-footer__bottom p {
+  margin: 0;
+  font-size: 0.85rem;
 }
 
 /* ======================================================= WhatsApp button */
@@ -1949,7 +2121,12 @@ table.data tbody tr:hover {
 @media (max-width: 960px) {
   .site-header__bar {
     flex-wrap: wrap;
-    border-radius: var(--radius-card);
+    min-height: 64px;
+    padding: 8px 0;
+  }
+
+  .site-nav ul a::after {
+    display: none;
   }
 
   .nav-toggle {
@@ -2072,5 +2249,482 @@ table.data tbody tr:hover {
   /* Room so the floating WhatsApp button never hides the end of the page. */
   .page-shell {
     padding-bottom: 88px;
+  }
+}
+
+/* ================================================= home: full-width bands */
+
+.home-container {
+  width: min(1240px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+/* Edge-to-edge hero on the home page; inner pages keep rounded blocks. */
+.home .hero {
+  border-radius: 0;
+  min-height: min(82vh, 680px);
+}
+
+.home .hero__content {
+  width: min(1240px, calc(100% - 32px));
+  max-width: none;
+  margin: 0 auto;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.home .hero__content > * {
+  max-width: 720px;
+}
+
+.home-band {
+  padding: clamp(48px, 7vw, 88px) 0;
+}
+
+.home-band--white {
+  background: var(--color-surface);
+}
+
+/* Teal bar under every band heading: the brand's small signature. */
+.home .section-head h2::after,
+.about-split h2::after {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 4px;
+  margin-top: 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.text-link svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.18s ease;
+}
+
+.text-link:hover svg {
+  transform: translateX(4px);
+}
+
+/* ---------------------------------------------------------------- intro */
+
+.home-intro {
+  background: var(--color-surface);
+  padding: clamp(56px, 8vw, 104px) 0;
+}
+
+.home-intro__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 16px 64px;
+  align-items: end;
+}
+
+.home-intro__inner .eyebrow {
+  grid-column: 1 / -1;
+}
+
+.home-intro h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3.6vw, 2.8rem);
+  font-weight: 800;
+}
+
+.home-intro h2 span {
+  color: var(--color-primary);
+  background: linear-gradient(transparent 62%, rgba(25, 230, 193, 0.35) 62%);
+}
+
+.home-intro__text {
+  display: grid;
+  gap: 18px;
+  justify-items: start;
+}
+
+.home-intro__text p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 1.05rem;
+}
+
+/* --------------------------------------------------------------- mosaic */
+
+.mosaic {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 240px;
+  gap: var(--gap-block);
+}
+
+.mosaic__tile {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: var(--radius-card);
+  background: var(--color-navy) var(--stripes);
+}
+
+/* First photo is the feature tile (2 x 2). */
+.mosaic__tile:first-child {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.mosaic__tile img {
+  object-fit: cover;
+  z-index: -2;
+  transition: transform 0.6s ease;
+}
+
+.mosaic__tile:hover img {
+  transform: scale(1.06);
+}
+
+.mosaic__caption {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 48px 20px 18px;
+  background: linear-gradient(180deg, transparent, var(--overlay-navy-strong) 70%);
+  color: #fff;
+}
+
+.mosaic__caption span {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-navy);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.mosaic__caption h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.mosaic__tile:first-child .mosaic__caption h3 {
+  font-size: clamp(1.3rem, 2.4vw, 1.75rem);
+}
+
+/* -------------------------------------------------------------- pillars */
+
+.home-pillars {
+  background: var(--color-navy) var(--stripes);
+  color: #fff;
+  padding: clamp(56px, 8vw, 96px) 0;
+}
+
+.home-pillars .eyebrow {
+  color: var(--color-accent);
+}
+
+.pillars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap-block);
+}
+
+.pillar {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 28px;
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: transform 0.22s ease, border-color 0.22s ease;
+}
+
+.pillar:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-accent);
+}
+
+.pillar__number {
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.pillar h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.pillar p {
+  margin: 0;
+  color: var(--color-on-dark-muted);
+}
+
+.pillars--light .pillar {
+  background: var(--color-surface-alt);
+  border-color: var(--color-border);
+}
+
+.pillars--light .pillar__number {
+  color: var(--color-primary);
+}
+
+.pillars--light .pillar p {
+  color: var(--color-text-muted);
+}
+
+.home-cta {
+  padding: clamp(40px, 6vw, 72px) 0 0;
+}
+
+/* -------------------------------------------------------------- clients */
+
+.clients__lead {
+  margin: 0;
+  max-width: 420px;
+  color: var(--color-text-muted);
+}
+
+.clients__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 12px;
+}
+
+.client-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-card);
+  background: var(--color-surface-alt);
+  border: 1px solid transparent;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.client-card:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Round badge like a brand logo; initials in navy with the brand stripes. */
+.client-card__logo {
+  position: relative;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--color-navy) var(--stripes);
+  color: var(--color-accent);
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 0 0 3px var(--color-surface), 0 0 0 2px var(--color-accent);
+}
+
+/* With a real logo the badge becomes a wide plate: most logos are horizontal. */
+.client-card__logo--image {
+  width: 136px;
+  height: 76px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.client-card__logo--image[data-plate='dark'] {
+  background: var(--color-navy);
+  box-shadow: none;
+}
+
+.client-card__logo img {
+  object-fit: contain;
+  padding: 8px 10px;
+}
+
+.client-card__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.client-card__text strong {
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.client-card__text span {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.clients__highlights {
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.clients__highlights li {
+  display: grid;
+  gap: 4px;
+  padding: 20px 24px;
+  border-radius: var(--radius-card);
+  background: var(--color-navy) var(--stripes);
+  color: #fff;
+  border-left: 4px solid var(--color-accent);
+}
+
+.clients__highlights span {
+  color: var(--color-on-dark-muted);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 640px) {
+  .clients__highlights {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------------------------------------------------------------- about */
+
+.about-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: center;
+}
+
+.about-split__media {
+  position: relative;
+  min-height: 380px;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: var(--color-navy) var(--stripes);
+}
+
+.about-split__media img {
+  object-fit: cover;
+}
+
+.about-split__text h2 {
+  margin: 4px 0 18px;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+}
+
+.about-split__text p:not(.eyebrow) {
+  color: var(--color-text-muted);
+}
+
+/* ----------------------------------------------------------- responsive */
+
+@media (max-width: 960px) {
+  .home-intro__inner,
+  .about-split {
+    grid-template-columns: 1fr;
+  }
+
+  .mosaic {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 200px;
+  }
+
+  .pillars,
+  .site-footer__columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-topbar p {
+    display: none;
+  }
+
+  .site-topbar__inner {
+    justify-content: center;
+  }
+
+  .brand__text small {
+    display: none;
+  }
+
+  .mosaic {
+    grid-template-columns: 1fr;
+  }
+
+  .mosaic__tile:first-child {
+    grid-column: auto;
+    grid-row: span 1;
+  }
+
+  .about-split__media {
+    min-height: 240px;
+  }
+}
+
+/* ------------------------------------------------------ contact details */
+
+.contact-details {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  color: var(--color-on-dark-muted);
+  font-size: 0.92rem;
+}
+
+.contact-details span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.site-footer .contact-details {
+  gap: 10px;
+}
+
+.site-footer .contact-details a {
+  min-height: 0;
+}
+
+.contact-details--intro {
+  margin-top: 16px;
+}
+
+@media (max-width: 1100px) {
+  .site-footer__columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .site-footer__columns {
+    grid-template-columns: 1fr;
   }
 }

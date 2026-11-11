@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { CloseIcon, MenuIcon } from './icons';
+import { ArrowRightIcon, CloseIcon, MenuIcon } from './icons';
 
 const LINKS = [
   { href: '/', label: 'Inicio' },
@@ -27,12 +27,26 @@ export function SiteHeader() {
       <a className="skip-link" href="#contenido">
         Saltar al contenido
       </a>
+
+      <div className="site-topbar on-dark">
+        <div className="site-topbar__inner">
+          <p>Automatización, electricidad, refrigeración y construcción · Ecuador</p>
+          <Link href="/proyectos" className="site-topbar__link">
+            Mira nuestros trabajos
+            <ArrowRightIcon />
+          </Link>
+        </div>
+      </div>
+
       <div className="site-header__bar">
         <Link href="/" className="brand" onClick={close}>
           <span className="brand__mark" aria-hidden="true">
             MI
           </span>
-          <span>Mantenimientos Integrales</span>
+          <span className="brand__text">
+            <span>Mantenimientos Integrales</span>
+            <small>y Construcciones</small>
+          </span>
         </Link>
 
         <button

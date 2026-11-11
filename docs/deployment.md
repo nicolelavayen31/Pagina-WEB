@@ -1,7 +1,7 @@
 # Despliegue
 
-> El entorno de producción (VPS o PaaS, dominio) aún no está decidido. Este documento fija los requisitos que
-> cualquier opción debe cumplir. Los Dockerfiles se escribirán cuando se elija la plataforma.
+> **Guía operativa con todos los comandos: [`deploy/README.md`](../deploy/README.md)** (VPS con Docker Compose y
+> Caddy). Este documento fija los requisitos que cualquier plataforma debe cumplir.
 
 ## Topología recomendada
 
@@ -41,8 +41,13 @@ Ver `apps/api/.env.example` y `apps/web/.env.example`. En producción:
 - **Migración destructiva fallida:** detener la app, `pg_restore -c -d <db> backup-AAAAMMDD.dump` y volver a
   desplegar la versión anterior.
 
-## Pendiente de decidir
+## Implementado (2026-11-11)
 
-- Plataforma (VPS con Docker Compose o PaaS) → Dockerfiles y archivo Compose de producción.
-- Proveedor S3 compatible para imágenes (sustituye a `LocalStorageService`).
+- `Dockerfile`, `docker-compose.prod.yml`, `deploy/Caddyfile`, usuario de BD sin privilegios y `deploy/backup.sh`.
+- Aviso por correo de cada cotización (Resend, opcional: `RESEND_API_KEY`, `LEAD_NOTIFY_TO`, `LEAD_NOTIFY_FROM`).
+- Datos de contacto públicos por variables `NEXT_PUBLIC_CONTACT_*`.
+
+## Pendiente
+
+- Proveedor S3 compatible para imágenes (sustituye a `LocalFileStorage`) si se necesitan varias instancias.
 - Redis, solo si se ejecutan varias instancias de la API.

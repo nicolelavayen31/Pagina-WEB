@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CtaBand } from '@/components/cta-band';
 import { PlainText } from '@/components/plain-text';
-import { ApiError, getPublicProjectBySlug, mediaUrl } from '@/lib/api';
+import { ApiError, mediaUrl } from '@/shared/api/client';
+import { getPublicProjectBySlug } from '@/modules/projects/api';
 
 export const dynamic = 'force-dynamic';
 

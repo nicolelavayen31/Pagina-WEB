@@ -1,11 +1,17 @@
 import { Global, Module } from '@nestjs/common';
-import { AuditController } from './audit.controller';
-import { AuditService } from './audit.service';
+import { AuditLogReader } from './application/audit-log-reader';
+import { AuditLogger } from './application/audit-logger';
+import { PrismaAuditRepository } from './infrastructure/prisma-audit.repository';
+import { AuditController } from './presentation/audit.controller';
 
 @Global()
 @Module({
   controllers: [AuditController],
-  providers: [AuditService],
-  exports: [AuditService],
+  providers: [
+    PrismaAuditRepository,
+    { provide: AuditLogger, useExisting: PrismaAuditRepository },
+    { provide: AuditLogReader, useExisting: PrismaAuditRepository },
+  ],
+  exports: [AuditLogger],
 })
 export class AuditModule {}

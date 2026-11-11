@@ -6,7 +6,8 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="page-shell">
       <SiteHeader />
-      <div id="contenido" className="page-stack" tabIndex={-1}>
+      {/* Inner pages keep a padded column; the home page uses full-width bands (main.home). */}
+      <div id="contenido" className="site-content" tabIndex={-1}>
         {children}
       </div>
       <SiteFooter />

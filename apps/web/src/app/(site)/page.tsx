@@ -2,10 +2,11 @@ import Link from 'next/link';
 import { CtaBand } from '@/components/cta-band';
 import { HeroCarousel } from '@/components/hero-carousel';
 import { ArrowRightIcon } from '@/components/icons';
-import { ProjectCard } from '@/components/project-card';
-import { ServiceCard } from '@/components/service-card';
-import { getPublicProjects, getPublicServices } from '@/lib/api';
-import { HERO_SLIDES } from '@/lib/site-photos';
+import { ProjectCard } from '@/modules/projects/components/project-card';
+import { ServiceCard } from '@/modules/services/components/service-card';
+import { getPublicProjects } from '@/modules/projects/api';
+import { getPublicServices } from '@/modules/services/api';
+import { HERO_SLIDES } from '@/shared/content/site-photos';
 
 export const dynamic = 'force-dynamic';
 

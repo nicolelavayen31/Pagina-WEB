@@ -1,6 +1,6 @@
 import * as argon2 from 'argon2';
 import { PrismaClient } from '@prisma/client';
-import { syncRolesAndPermissions } from '../src/modules/auth/rbac-sync';
+import { syncRolesAndPermissions } from '../src/modules/auth/infrastructure/rbac-sync';
 
 const prisma = new PrismaClient();
 

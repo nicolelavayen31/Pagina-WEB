@@ -8,20 +8,23 @@ Sitio web corporativo público y panel administrativo privado para una empresa d
 |---|---|
 | Node.js | 24 (probado con 24.15) |
 | pnpm | 10.15.0 (vía Corepack: `corepack pnpm …`) |
-| Next.js / React | 16.4.0 / 19.3.0 |
+| Next.js / React | 16.4.6 / 19.3.0 |
 | Tailwind CSS | 4 (solo tema y utilidades, sin *preflight*) |
 | NestJS | 11 |
 | Prisma (CLI y Client) | 6.19.3 |
-| Zod | 4.6.5 |
+| Zod | 4.6.6 |
 | PostgreSQL | 18 |
 | Redis | No usado todavía (opcional, ver `docker-compose.yml`) |
 
 ## Estructura
 
-- `apps/web` — sitio público y panel administrativo (Next.js). El navegador solo habla con Next; `/api/*` se reenvía a la API.
-- `apps/api` — API NestJS, esquema y migraciones Prisma, seed.
-- `packages/contracts` — esquemas Zod, permisos por rol y tipos compartidos.
-- `docs/` — arquitectura, reglas de negocio, seguridad y despliegue.
+- `apps/web` — sitio público y panel administrativo (Next.js). `app/` solo enruta; la funcionalidad vive en
+  `src/modules/<dominio>`. El navegador solo habla con Next; `/api/*` se reenvía a la API.
+- `apps/api` — API NestJS con Clean Architecture por módulos (`domain` / `application` / `infrastructure` /
+  `presentation`), esquema y migraciones Prisma, seed.
+- `packages/contracts` — formato del cable: esquemas Zod, tipos de respuesta y permisos por rol.
+- `docs/` — [arquitectura](docs/architecture.md), [guía de desarrollo](docs/development.md),
+  [reglas de negocio](docs/business-rules.md), [seguridad](docs/security.md) y [despliegue](docs/deployment.md).
 
 ## Puesta en marcha local (Windows, sin Docker)
 
@@ -47,7 +50,7 @@ Panel: http://localhost:3000/admin. Después del primer seed, elimine `ADMIN_PAS
 |---|---|---|
 | `corepack pnpm lint` | ESLint (API y web), 0 avisos permitidos | — |
 | `corepack pnpm typecheck` | TypeScript en los 3 paquetes | — |
-| `corepack pnpm test` | Pruebas unitarias de la API (sin BD) | — |
+| `corepack pnpm test` | Pruebas unitarias de la API (dominio y casos de uso, sin BD) | — |
 | `corepack pnpm test:int` | Pruebas de integración contra PostgreSQL real | BD `*_test` |
 | `corepack pnpm test:e2e` | Playwright: compila API y web y las prueba en :3101/:3100 | BD `*_test`, Chromium |
 | `corepack pnpm build` | Build de producción de los 3 paquetes | — |

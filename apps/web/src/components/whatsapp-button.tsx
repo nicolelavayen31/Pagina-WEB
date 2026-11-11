@@ -1,4 +1,4 @@
-import { whatsappHref } from '@/lib/contact';
+import { whatsappHref } from '@/shared/lib/whatsapp';
 import { WhatsAppIcon } from './icons';
 
 /** Floating turquoise circle with the icon only; the accessible name comes from aria-label. */

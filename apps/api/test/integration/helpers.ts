@@ -5,10 +5,10 @@ import * as argon2 from 'argon2';
 import request from 'supertest';
 import type { RoleName } from '@repo/contracts';
 import { AppModule } from '../../src/app.module';
-import { configureApp } from '../../src/app.setup';
-import { hashSessionToken } from '../../src/modules/auth/auth.service';
-import { syncRolesAndPermissions } from '../../src/modules/auth/rbac-sync';
-import { PrismaService } from '../../src/prisma/prisma.service';
+import { configureApp } from '../../src/config/app.setup';
+import { hashSessionToken } from '../../src/modules/auth/domain/session-token';
+import { syncRolesAndPermissions } from '../../src/modules/auth/infrastructure/rbac-sync';
+import { PrismaService } from '../../src/common/persistence/prisma.service';
 import { assertTestDatabase } from './setup/test-env';
 
 export const TEST_PASSWORD = 'Contrasena-Segura-2026';

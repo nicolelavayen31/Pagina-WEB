@@ -15,14 +15,15 @@
 | Archivos | Firma binaria, límite de tamaño, recodificación WebP sin EXIF, claves generadas por el servidor, ruta confinada | `media.int-spec.ts` |
 | Datos públicos | `select` explícito: sin autoría, estado ni claves de almacenamiento | `projects.int-spec.ts` |
 | Errores | Filtro global: sin trazas en las respuestas; los errores 5xx se registran en el log | `security.int-spec.ts` |
-| Entorno | Validación al arrancar; la API no arranca en producción sin Turnstile | `contracts.spec.ts` |
+| Entorno | Validación al arrancar; la API no arranca en producción sin Turnstile | `contracts/env-and-schemas.spec.ts` |
 
 ## Riesgos aceptados y pendientes
 
 - **Usuario de BD:** la API local se conecta como `postgres` (superusuario). En producción, cree un usuario
   propietario solo de la base de la aplicación.
 - **`ADMIN_PASSWORD` en `.env`:** bórrelo tras el primer seed.
-- **`pnpm audit`:** `deepmerge-ts < 8` llega como dependencia transitiva del CLI de Prisma (`@prisma/config`). Solo se
+- **`pnpm audit`** (2026-11-11: Next 16.4.6, Nest 11.2.9, Zod 4.6.6, multer 2.5.0; único aviso restante):
+  `deepmerge-ts < 8` llega como dependencia transitiva del CLI de Prisma (`@prisma/config`). Solo se
   ejecuta con configuración propia y no con datos de usuarios. Ninguna versión de Prisma 6 o 7 lo corrige todavía.
   Riesgo aceptado; revisar en cada actualización de Prisma.
 - **IP real y límite de peticiones:** `TRUST_PROXY` debe coincidir con el número de proxies. Next conserva un

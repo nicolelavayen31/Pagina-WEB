@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useCallback, useEffect, useState, useSyncExternalStore, type FocusEvent, type KeyboardEvent } from 'react';
-import type { GallerySlide } from '@/lib/site-photos';
+import type { GallerySlide } from '@/shared/content/site-photos';
 import { ArrowLeftIcon, ArrowRightIcon, PauseIcon, PlayIcon } from './icons';
 
 const INTERVAL_MS = 6000;

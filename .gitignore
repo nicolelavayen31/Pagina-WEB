@@ -31,3 +31,7 @@ apps/web/playwright-report/
 
 # Next.js E2E build output
 apps/web/.next-e2e
+
+# Production secrets and backups (server only)
+deploy/backups/
+!deploy/.env.production.example

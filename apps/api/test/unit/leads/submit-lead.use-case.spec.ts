@@ -1,4 +1,5 @@
 import type { HumanVerifier } from '../../../src/modules/leads/application/ports/human-verifier';
+import type { LeadNotifier } from '../../../src/modules/leads/application/ports/lead-notifier';
 import type { LeadRepository, NewLead } from '../../../src/modules/leads/application/ports/lead.repository';
 import { SubmitLeadUseCase, type SubmitLeadCommand } from '../../../src/modules/leads/application/use-cases/submit-lead.use-case';
 import { UnknownServiceError } from '../../../src/modules/leads/domain/lead.errors';
@@ -19,9 +20,11 @@ function setup() {
   };
   const humans = { verify: jest.fn(async () => undefined) } satisfies HumanVerifier;
   const services = { isActive: jest.fn(async (id: string) => id === 'active-service') } as unknown as ServiceQueries;
-  const useCase = new SubmitLeadUseCase(leads, humans, services);
+  const notifier = { notifyNewLead: jest.fn(async () => undefined) } satisfies LeadNotifier;
+  const useCase = new SubmitLeadUseCase(leads, humans, services, notifier);
   jest.spyOn(useCase['logger'], 'warn').mockImplementation(() => undefined);
-  return { useCase, leads, humans };
+  const logError = jest.spyOn(useCase['logger'], 'error').mockImplementation(() => undefined);
+  return { useCase, leads, humans, notifier, logError };
 }
 
 describe('SubmitLeadUseCase', () => {
@@ -54,5 +57,36 @@ describe('SubmitLeadUseCase', () => {
     const { useCase, leads } = setup();
     await expect(useCase.execute({ ...command, serviceId: 'retired-service' })).rejects.toThrow(UnknownServiceError);
     expect(leads.create).not.toHaveBeenCalled();
+  });
+
+  it('notifies the team about a stored lead, without the consent fields', async () => {
+    const { useCase, notifier } = setup();
+    await useCase.execute({ ...command, company: 'ACME' });
+    expect(notifier.notifyNewLead).toHaveBeenCalledWith({
+      name: 'Ana Pérez',
+      company: 'ACME',
+      email: 'ana.perez@example.com',
+      phone: '+593 99 123 4567',
+      location: 'Quito',
+      description: command.description,
+      budgetRange: null,
+    });
+  });
+
+  it('still answers success when the notification fails, and logs it', async () => {
+    const { useCase, leads, notifier, logError } = setup();
+    notifier.notifyNewLead.mockRejectedValueOnce(new Error('mail down'));
+
+    await expect(useCase.execute(command)).resolves.toEqual({ success: true });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(leads.create).toHaveBeenCalled();
+    expect(logError).toHaveBeenCalledWith('Lead notification failed: mail down');
+  });
+
+  it('does not notify when the honeypot is filled', async () => {
+    const { useCase, notifier } = setup();
+    await useCase.execute({ ...command, website: 'http://spam.example' });
+    expect(notifier.notifyNewLead).not.toHaveBeenCalled();
   });
 });

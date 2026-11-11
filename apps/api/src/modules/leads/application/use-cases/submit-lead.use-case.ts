@@ -4,6 +4,7 @@ import { ServiceQueries } from '../../../services/application/service.queries';
 import { isHoneypotTriggered } from '../../domain/lead';
 import { UnknownServiceError } from '../../domain/lead.errors';
 import { HumanVerifier } from '../ports/human-verifier';
+import { LeadNotifier } from '../ports/lead-notifier';
 import { LeadRepository } from '../ports/lead.repository';
 
 export type SubmitLeadCommand = {
@@ -28,6 +29,7 @@ export class SubmitLeadUseCase {
     private readonly leads: LeadRepository,
     private readonly humans: HumanVerifier,
     private readonly services: ServiceQueries,
+    private readonly notifier: LeadNotifier,
   ) {}
 
   /** Answers the same way when the honeypot is hit, so bots get no signal; nothing is stored then. */
@@ -44,17 +46,25 @@ export class SubmitLeadUseCase {
     }
 
     // Fields are mapped one by one: nothing from the request reaches persistence unchecked.
-    await this.leads.create({
+    const lead = {
       name: command.name,
       company: command.company || null,
       email: command.email.toLowerCase(),
       phone: command.phone,
-      serviceId: command.serviceId ?? null,
       location: command.location,
       description: command.description,
       budgetRange: command.budgetRange ?? null,
+    };
+    await this.leads.create({
+      ...lead,
+      serviceId: command.serviceId ?? null,
       privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
       consentAt: new Date(),
+    });
+
+    // Not awaited: the request is already stored, so the visitor never waits for (or sees) mail errors.
+    this.notifier.notifyNewLead(lead).catch((error: Error) => {
+      this.logger.error(`Lead notification failed: ${error.message}`);
     });
     return { success: true };
   }

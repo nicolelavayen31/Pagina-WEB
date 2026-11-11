@@ -19,6 +19,10 @@ export const envSchema = z
     UPLOAD_MAX_BYTES: z.coerce.number().int().min(1024).default(10 * 1024 * 1024),
     RATE_LIMIT_LOGIN: z.coerce.number().int().min(1).default(5),
     RATE_LIMIT_LEADS: z.coerce.number().int().min(1).default(3),
+    // New quote request e-mail (optional). Empty RESEND_API_KEY disables it.
+    RESEND_API_KEY: z.string().default(''),
+    LEAD_NOTIFY_TO: z.string().default(''),
+    LEAD_NOTIFY_FROM: z.string().default(''),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production' && !env.TURNSTILE_SECRET_KEY) {
@@ -27,6 +31,13 @@ export const envSchema = z
         path: ['TURNSTILE_SECRET_KEY'],
         message: 'TURNSTILE_SECRET_KEY is required in production',
       });
+    }
+    if (env.RESEND_API_KEY) {
+      for (const key of ['LEAD_NOTIFY_TO', 'LEAD_NOTIFY_FROM'] as const) {
+        if (!env[key]) {
+          ctx.addIssue({ code: 'custom', path: [key], message: `${key} is required when RESEND_API_KEY is set` });
+        }
+      }
     }
   });
 

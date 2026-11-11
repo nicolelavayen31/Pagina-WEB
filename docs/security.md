@@ -19,8 +19,8 @@
 
 ## Riesgos aceptados y pendientes
 
-- **Usuario de BD:** la API local se conecta como `postgres` (superusuario). En producción, cree un usuario
-  propietario solo de la base de la aplicación.
+- **Usuario de BD:** en producción (`docker-compose.prod.yml`) la API usa el usuario `app`, dueño de la base pero
+  sin superusuario (`deploy/postgres-init`). En desarrollo local puede seguir usándose otro usuario.
 - **`ADMIN_PASSWORD` en `.env`:** bórrelo tras el primer seed.
 - **`pnpm audit`** (2026-11-11: Next 16.4.6, Nest 11.2.9, Zod 4.6.6, multer 2.5.0; único aviso restante):
   `deepmerge-ts < 8` llega como dependencia transitiva del CLI de Prisma (`@prisma/config`). Solo se

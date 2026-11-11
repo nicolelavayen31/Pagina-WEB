@@ -1,0 +1,18 @@
+# HTTPS certificates are obtained and renewed automatically (Let's Encrypt).
+# In Cloudflare, keep these DNS records as "DNS only" (grey cloud) so the real client IP reaches the server.
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	reverse_proxy web:3000 {
+		# Overwrite (never append) X-Forwarded-For: the API rate-limits by this IP.
+		header_up X-Forwarded-For {remote_host}
+	}
+
+	# Basic access log to stdout (docker compose logs caddy).
+	log
+}
+
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}

@@ -30,7 +30,8 @@ export function toAuthUser(user: UserWithPermissions): AuthUser {
 }
 
 @Injectable()
-export class AuthService {
+export class
+AuthService {
   private dummyHash?: Promise<string>;
 
   constructor(
